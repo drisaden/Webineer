@@ -1,0 +1,16 @@
+
+> webineer@0.1.0 build
+> next build
+
+▲ Next.js 16.4.5 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 97ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.2s
+  Running TypeScript ...
+src/data/mock/integrations.ts(1,15): error TS2305: Module '"@/types"' has no exported member 'Integration'.
+src/data/mock/users.ts(7,3): error TS2322: Type '"Growth"' is not assignable to type '"free" | "starter" | "professional" | "business"'.
+src/data/mock/users.ts(16,3): error TS2820: Type '"Owner"' is not assignable to type 'WorkspaceRole'. Did you mean '"owner"'?
+Failed to type check.
+

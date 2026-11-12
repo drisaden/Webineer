@@ -1,0 +1,241 @@
+export const platformUsers = [
+  {
+    id: "adm_u_101",
+    name: "Alyssa Jordan",
+    email: "alyssa@webineer.app",
+    status: "active",
+    workspaceCount: 4,
+    plan: "Business",
+    registrationDate: "2025-01-18",
+    lastActivity: "2 hours ago",
+    role: "super-admin",
+  },
+  {
+    id: "adm_u_102",
+    name: "Nneka Okafor",
+    email: "nneka@northstarstudio.co",
+    status: "active",
+    workspaceCount: 2,
+    plan: "Professional",
+    registrationDate: "2025-02-04",
+    lastActivity: "Yesterday",
+    role: "owner",
+  },
+  {
+    id: "adm_u_103",
+    name: "Daniel Kim",
+    email: "daniel@elevatehq.io",
+    status: "suspended",
+    workspaceCount: 1,
+    plan: "Starter",
+    registrationDate: "2025-03-14",
+    lastActivity: "3 weeks ago",
+    role: "admin",
+  },
+  {
+    id: "adm_u_104",
+    name: "Chloe Martin",
+    email: "chloe@mentorloop.ai",
+    status: "active",
+    workspaceCount: 3,
+    plan: "Business",
+    registrationDate: "2025-04-21",
+    lastActivity: "8 hours ago",
+    role: "owner",
+  },
+  {
+    id: "adm_u_105",
+    name: "Marcus Bell",
+    email: "marcus@launchroom.co",
+    status: "active",
+    workspaceCount: 2,
+    plan: "Professional",
+    registrationDate: "2025-05-09",
+    lastActivity: "1 day ago",
+    role: "admin",
+  },
+];
+
+export const platformWorkspaces = [
+  {
+    id: "ws_001",
+    name: "Northstar Studio",
+    owner: "Nneka Okafor",
+    members: 18,
+    webinars: 9,
+    plan: "Business",
+    usage: "82%",
+    status: "active",
+    created: "2025-01-10",
+  },
+  {
+    id: "ws_002",
+    name: "ElevateHQ",
+    owner: "Daniel Kim",
+    members: 12,
+    webinars: 7,
+    plan: "Professional",
+    usage: "64%",
+    status: "active",
+    created: "2025-02-27",
+  },
+  {
+    id: "ws_003",
+    name: "MentorLoop AI",
+    owner: "Chloe Martin",
+    members: 24,
+    webinars: 14,
+    plan: "Enterprise",
+    usage: "91%",
+    status: "active",
+    created: "2025-04-01",
+  },
+  {
+    id: "ws_004",
+    name: "LaunchRoom",
+    owner: "Marcus Bell",
+    members: 6,
+    webinars: 3,
+    plan: "Starter",
+    usage: "32%",
+    status: "pending",
+    created: "2025-06-19",
+  },
+];
+
+export const platformWebinars = [
+  {
+    id: "wb_001",
+    title: "Scaling a Creator Business Without Burnout",
+    workspace: "Northstar Studio",
+    owner: "Nneka Okafor",
+    type: "live",
+    status: "published",
+    scheduled: "2026-11-18",
+    registrations: 462,
+    paymentStatus: "paid",
+    created: "2026-10-01",
+  },
+  {
+    id: "wb_002",
+    title: "Product Demo: Launch Workflow Masterclass",
+    workspace: "MentorLoop AI",
+    owner: "Chloe Martin",
+    type: "evergreen",
+    status: "draft",
+    scheduled: "2026-11-21",
+    registrations: 320,
+    paymentStatus: "pending",
+    created: "2026-09-18",
+  },
+  {
+    id: "wb_003",
+    title: "Private Growth Lab",
+    workspace: "ElevateHQ",
+    owner: "Daniel Kim",
+    type: "recurring",
+    status: "archived",
+    scheduled: "2026-10-09",
+    registrations: 188,
+    paymentStatus: "paid",
+    created: "2026-07-12",
+  },
+];
+
+export const platformTransactions = [
+  {
+    id: "txn_001",
+    provider: "Paystack",
+    customer: "Northstar Studio",
+    amount: 183500,
+    currency: "NGN",
+    type: "subscription",
+    status: "completed",
+    date: "2026-11-07",
+    reference: "PS-9482001",
+  },
+  {
+    id: "txn_002",
+    provider: "Flutterwave",
+    customer: "MentorLoop AI",
+    amount: 26500,
+    currency: "NGN",
+    type: "webinar_ticket",
+    status: "completed",
+    date: "2026-11-08",
+    reference: "FW-730921",
+  },
+  {
+    id: "txn_003",
+    provider: "Simulated",
+    customer: "LaunchRoom",
+    amount: 12000,
+    currency: "USD",
+    type: "refund",
+    status: "pending",
+    date: "2026-11-09",
+    reference: "SIM-1802",
+  },
+];
+
+export const platformIntegrations = [
+  { name: "Paystack", category: "Payment", status: "healthy", mode: "Live", lastSuccess: "2 hours ago" },
+  { name: "Flutterwave", category: "Payment", status: "degraded", mode: "Sandbox", lastSuccess: "1 day ago" },
+  { name: "SMTP", category: "Email", status: "healthy", mode: "Development", lastSuccess: "12 minutes ago" },
+  { name: "Google Analytics", category: "Analytics", status: "healthy", mode: "Live", lastSuccess: "Today" },
+  { name: "S3 Storage", category: "Storage", status: "not_configured", mode: "Disabled", lastSuccess: "—" },
+];
+
+export const systemHealth = [
+  { name: "Application", status: "Healthy", detail: "7.8s p95 response time" },
+  { name: "PostgreSQL", status: "Degraded", detail: "Pool saturation at 72%" },
+  { name: "Background workers", status: "Healthy", detail: "19 jobs completed in the last hour" },
+  { name: "Email delivery", status: "Healthy", detail: "98.6% delivered" },
+  { name: "Webhook processing", status: "Unavailable", detail: "1 provider retry pending" },
+];
+
+export const auditEvents = [
+  { id: "aud_001", actor: "Alyssa Jordan", action: "Suspended user", target: "Daniel Kim", timestamp: "2026-11-11T08:20:00Z" },
+  { id: "aud_002", actor: "Alyssa Jordan", action: "Updated workspace plan", target: "Northstar Studio", timestamp: "2026-11-10T15:10:00Z" },
+  { id: "aud_003", actor: "Alyssa Jordan", action: "Enabled payment provider", target: "Paystack", timestamp: "2026-11-09T10:12:00Z" },
+];
+
+export const jobQueue = [
+  { name: "send_reminder_email", queue: "email", status: "running", scheduled: "11:20 AM", retries: 0 },
+  { name: "sync_webinar_report", queue: "analytics", status: "pending", scheduled: "11:45 AM", retries: 1 },
+  { name: "reconcile_transactions", queue: "payments", status: "failed", scheduled: "10:00 AM", retries: 3 },
+];
+
+export const adminNotifications = [
+  { title: "Database connection pool is nearing saturation", severity: "warning", time: "20 minutes ago" },
+  { title: "Flutterwave sandbox webhooks are retrying", severity: "info", time: "1 hour ago" },
+  { title: "Backup verification failed for last nightly snapshot", severity: "critical", time: "3 hours ago" },
+];
+
+export const adminOverviewMetrics = {
+  totalUsers: 1284,
+  activeUsers: 867,
+  suspendedUsers: 19,
+  totalWorkspaces: 214,
+  activeWorkspaces: 163,
+  totalWebinars: 832,
+  publishedWebinars: 511,
+  totalRegistrations: 18421,
+  totalAttendees: 12490,
+  totalTransactions: 1294,
+  platformRevenue: 9450000,
+  webinarRevenue: 3124000,
+  failedPayments: 15,
+  deliveryRate: 98.6,
+  failedAutomationJobs: 7,
+};
+
+export const monthlyPlatformChart = [
+  { month: "Jan", users: 80, workspaces: 30, revenue: 620000 },
+  { month: "Feb", users: 95, workspaces: 36, revenue: 760000 },
+  { month: "Mar", users: 110, workspaces: 40, revenue: 820000 },
+  { month: "Apr", users: 122, workspaces: 46, revenue: 930000 },
+  { month: "May", users: 150, workspaces: 52, revenue: 1100000 },
+  { month: "Jun", users: 170, workspaces: 65, revenue: 1380000 },
+  { month: "Jul", users: 194, workspaces: 72, revenue: 1620000 },
+];

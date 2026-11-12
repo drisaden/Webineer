@@ -1,0 +1,10 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Webineer logo</title>
+  <desc id="desc">Webineer primary logo with navy monogram and wordmark.</desc>
+  <g transform="translate(0 10)">
+    <rect x="0" y="0" width="160" height="160" rx="42" fill="#041B5E"/>
+    <path d="M34 112L60 48L80 88L100 48L126 112" stroke="#0AEBCB" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M18 120H142" stroke="#0AEBCB" stroke-width="8" stroke-linecap="round" opacity="0.3"/>
+  </g>
+  <text x="210" y="104" fill="#041B5E" font-family="Outfit, Segoe UI, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2">Webineer</text>
+</svg>

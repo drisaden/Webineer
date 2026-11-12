@@ -1,0 +1,14 @@
+npm warn deprecated recharts@2.15.4: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+npm warn tarball tarball data for @babel/helper-module-transforms@https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.29.13.tgz (sha512-/U96wOz+SCoZ7Da/8kjDGltcNY280JPQcRNPK0Hk3PTbdpaiBDQImtC6JsbVwb1HGMr3usZQU2WsWVjhYNmRzw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for flatted@https://registry.npmjs.org/flatted/-/flatted-3.4.4.tgz (sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @babel/traverse@https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.13.tgz (sha512-0ve0xMlFA73dgY1oyJRY6RoW+/bncdcOQqg6jjYcVfXBK90OdLXjm9R6lmRetdZVrPjXkKIoMVBqYFPjcAlZ4Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for flatted@https://registry.npmjs.org/flatted/-/flatted-3.4.4.tgz (sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==) seems to be corrupted. Trying again.
+npm error code ENOTEMPTY
+npm error syscall rmdir
+npm error path c:\MEGA\Documents\Projects\Webineer\node_modules\d3-time-format\locale
+npm error errno -4051
+npm error ENOTEMPTY: directory not empty, rmdir 'c:\MEGA\Documents\Projects\Webineer\node_modules\d3-time-format\locale'
+npm error A complete log of this run can be found in: C:\Users\USER\AppData\Local\npm-cache\_logs\2026-11-09T11_43_35_473Z-debug-0.log
+
+c:\MEGA\Documents\Projects\Webineer>
