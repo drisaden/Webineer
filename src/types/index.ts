@@ -562,13 +562,17 @@ export interface WebhookDeliveryLog {
   responseBody?: string;
 }
 
-export interface IntegrationConnector {
+export interface Integration {
   id: string;
-  category: "video" | "email" | "payments" | "calendar" | "analytics" | "webhooks";
   name: string;
-  description: string;
-  icon: string;
+  type: "email" | "crm" | "analytics" | "payment" | "video" | "calendar" | "webhooks";
   connected: boolean;
+  description: string;
+}
+
+export interface IntegrationConnector extends Integration {
+  category: "video" | "email" | "payments" | "calendar" | "analytics" | "webhooks";
+  icon: string;
   statusText: string;
   isAvailable: boolean;
   config?: Record<string, unknown>;
