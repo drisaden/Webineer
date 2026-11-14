@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { getPrisma } from "@/server/db/prisma";
-import { describeSmtpError, isPermanentSmtpError, sendMail, smtpConfig } from "./smtp";
+import { describeSmtpError, describeSmtpLogin, isPermanentSmtpError, isSmtpAuthError, sendMail, smtpConfig } from "./smtp";
 
 /**
  * Database-backed email outbox. Every email is logged in `email_logs`; a dedupe key makes the
@@ -111,6 +111,8 @@ export async function deliverEmail(id: string): Promise<DeliveryOutcome> {
       },
     });
     console.error(`[email] ${exhausted ? "gave up on" : "will retry"} ${row.template} to ${row.toEmail.replace(/(.).*@/, "$1***@")}: ${describeSmtpError(error)}`);
+    // A rejected login is a configuration problem, not a message problem: say exactly what was used.
+    if (isSmtpAuthError(error)) console.error(`[email] SMTP login rejected by the mail server. Sent: ${describeSmtpLogin(cfg)}`);
     return exhausted ? "failed" : "retry";
   }
 }

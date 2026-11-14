@@ -30,7 +30,7 @@ export interface EmailProvider {
 const inMemoryEmailLogs: EmailDeliveryRecord[] = [];
 
 export class DevelopmentLogEmailProvider implements EmailProvider {
-  id: "development_log" = "development_log";
+  id = "development_log" as const;
   name = "Development Log Adapter (Simulated)";
 
   async sendEmail(options: SendEmailOptions): Promise<EmailDeliveryRecord> {
@@ -79,7 +79,7 @@ export function renderStandardTemplate(type: EmailTemplateType, variables: Recor
  * delivered over SMTP after the response is sent, and retried by the cron runner on failure.
  */
 export class DatabaseSmtpEmailProvider implements EmailProvider {
-  id: "smtp" = "smtp";
+  id = "smtp" as const;
   name = "SMTP (database outbox)";
 
   async sendEmail(options: SendEmailOptions): Promise<EmailDeliveryRecord> {

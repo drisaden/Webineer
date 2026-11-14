@@ -18,11 +18,13 @@ export interface SmtpConfig {
 
 export function smtpConfig(env: Record<string, string | undefined> = process.env): SmtpConfig | null {
   // Vercel's dashboard stores values literally (a .env file strips surrounding quotes, Vercel doesn't),
-  // so tolerate values pasted with their .env quotes. The password is never altered.
+  // so tolerate values pasted with their .env quotes.
   const clean = (v?: string) => v?.trim().replace(/^(["'])(.*)\1$/, "$2").trim();
   const host = clean(env.SMTP_HOST);
   const user = clean(env.SMTP_USER);
-  const pass = env.SMTP_PASS;
+  // Only surrounding whitespace / line breaks (copy-paste artifacts) are removed from the password;
+  // its characters are otherwise sent exactly as stored.
+  const pass = env.SMTP_PASS?.replace(/^\s+|\s+$/g, "");
   const from = clean(env.SMTP_FROM);
   if (!host || !user || !pass || !from) return null;
   const port = Number(env.SMTP_PORT ?? 465) || 465;
@@ -85,9 +87,44 @@ export function isPermanentSmtpError(error: unknown): boolean {
   return typeof code === "number" && [501, 550, 551, 552, 553, 554, 555].includes(code);
 }
 
+/**
+ * On a rejected login (535 / EAUTH), describe what the server was sent WITHOUT revealing the password:
+ * which host/port/user were used and whether the stored password carries typical paste artifacts.
+ * This is what separates "wrong value in the environment" from "mail server refuses this client".
+ */
+export function describeSmtpLogin(cfg: SmtpConfig, env: Record<string, string | undefined> = process.env): string {
+  const raw = env.SMTP_PASS ?? "";
+  const flags = [
+    raw !== raw.trim() ? "had-surrounding-whitespace(trimmed)" : null,
+    /^(["']).*\1$/.test(raw.trim()) ? "WRAPPED-IN-QUOTES" : null,
+    /\s/.test(raw.trim()) ? "CONTAINS-WHITESPACE" : null,
+    /[^\x20-\x7e]/.test(raw.trim()) ? "CONTAINS-NON-ASCII" : null,
+    /^SMTP_PASS\s*=/.test(raw.trim()) ? "INCLUDES-VARIABLE-NAME" : null,
+  ].filter(Boolean);
+  const rawUser = env.SMTP_USER ?? "";
+  return [
+    `host=${cfg.host}`,
+    `port=${cfg.port}`,
+    `tls=${cfg.secure ? "implicit" : "starttls"}`,
+    `user=${cfg.user}`,
+    rawUser !== cfg.user ? "user-had-quotes-or-spaces(cleaned)" : null,
+    `secretLength=${cfg.pass.length}`,
+    `secretFlags=${flags.length ? flags.join(",") : "none"}`,
+  ].filter(Boolean).join(" ");
+}
+
+export function isSmtpAuthError(error: unknown): boolean {
+  const e = error as { responseCode?: number; code?: string };
+  return e?.responseCode === 535 || e?.code === "EAUTH";
+}
+
 export function describeSmtpError(error: unknown): string {
   const e = error as { responseCode?: number; code?: string; message?: string; response?: string };
   const parts = [e.responseCode ? String(e.responseCode) : null, e.code ?? null, (e.response ?? e.message ?? "SMTP error").slice(0, 300)];
   // Never echo credentials that a server may reflect back.
-  return parts.filter(Boolean).join(" ").replace(/(pass(word)?|auth)\S*/gi, "[redacted]");
+  return parts
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\b(pass(word)?|pwd)\s*[=:]\s*\S+/gi, "$1=[redacted]")
+    .replace(/[A-Za-z0-9+/]{24,}={0,2}/g, "[redacted]");
 }

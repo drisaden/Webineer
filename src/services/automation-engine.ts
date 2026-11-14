@@ -1,5 +1,6 @@
 import type {
   AutomationActionType,
+  EmailTemplateType,
   AutomationExecution,
   AutomationTriggerEvent,
   AutomationWorkflow,
@@ -222,7 +223,7 @@ export class AutomationEngine {
             logs.push(`Executing action: ${step.actionType}`);
 
             if (step.actionType === "send_email" && data.recipientEmail) {
-              const templateType = (step.actionPayload?.templateType as any) || "registration_confirmation";
+              const templateType = (step.actionPayload?.templateType as EmailTemplateType | undefined) || "registration_confirmation";
               await emailProvider.sendEmail({
                 workspaceId,
                 webinarId: data.webinarId,

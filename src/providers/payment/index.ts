@@ -89,7 +89,7 @@ const inMemoryTransactions: PaymentTransaction[] = [
 ];
 
 export class SimulatedPaymentProvider implements PaymentProvider {
-  id: "simulated" = "simulated";
+  id = "simulated" as const;
   name = "Simulated Test Gateway (Zero Cost)";
 
   async initialize(params: InitializePaymentParams): Promise<PaymentInitializationResult> {
