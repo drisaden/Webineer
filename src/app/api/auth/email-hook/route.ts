@@ -1,6 +1,6 @@
 import { readTextBody } from "@/lib/server/http";
 import { hookSecrets, planAuthEmails, verifyStandardWebhook, type HookPayload } from "@/server/email/auth-hook";
-import { sendNow } from "@/server/email/outbox";
+import { queueAndDeliver } from "@/server/email/outbox";
 import { appUrl } from "@/server/email/receipts";
 import { smtpConfig } from "@/server/email/smtp";
 
@@ -37,8 +37,11 @@ export async function POST(request: Request) {
   const planned = planAuthEmails(payload, appUrl());
   if (planned.length === 0) return Response.json({});
 
+  // Supabase aborts a hook that takes longer than ~5s, which would fail the sign-up *after* the
+  // account exists. So the email is saved to the durable outbox first, the hook answers at once,
+  // and delivery runs after the response; the cron runner retries any transient SMTP failure.
   for (const email of planned) {
-    const result = await sendNow({
+    const result = await queueAndDeliver({
       template: `auth_${email.action}`,
       to: email.to,
       toName: email.toName,
@@ -49,8 +52,6 @@ export async function POST(request: Request) {
       dedupeKey: `auth:${verified.id}:${email.to.toLowerCase()}`,
     });
     if (result.status === "skipped") return fail(500, "The email could not be sent.");
-    // "retry": a transient SMTP problem. It stays queued and the cron runner retries within minutes.
-    if ("delivery" in result && result.delivery === "failed") return fail(500, "The email could not be sent.");
   }
   return Response.json({});
 }

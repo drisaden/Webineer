@@ -153,7 +153,9 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
     return { status: "error", message: "We couldn't create your account. Please try again.", email: parsed.data.email, values };
   }
 
-  await audit("auth.sign_up", { id: data.user?.id, email: parsed.data.email });
+  // The app profile row (audit_logs.actor_user_id FK target) is created on first sign-in, so it
+  // doesn't exist yet. Record the auth user id in metadata instead of violating the foreign key.
+  await audit("auth.sign_up", { email: parsed.data.email }, { authUserId: data.user?.id ?? null });
 
   // Email confirmation disabled in Supabase → a session is returned immediately.
   if (data.session && data.user) {

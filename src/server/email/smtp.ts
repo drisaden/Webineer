@@ -17,17 +17,20 @@ export interface SmtpConfig {
 }
 
 export function smtpConfig(env: Record<string, string | undefined> = process.env): SmtpConfig | null {
-  const host = env.SMTP_HOST?.trim();
-  const user = env.SMTP_USER?.trim();
+  // Vercel's dashboard stores values literally (a .env file strips surrounding quotes, Vercel doesn't),
+  // so tolerate values pasted with their .env quotes. The password is never altered.
+  const clean = (v?: string) => v?.trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+  const host = clean(env.SMTP_HOST);
+  const user = clean(env.SMTP_USER);
   const pass = env.SMTP_PASS;
-  const from = env.SMTP_FROM?.trim();
+  const from = clean(env.SMTP_FROM);
   if (!host || !user || !pass || !from) return null;
   const port = Number(env.SMTP_PORT ?? 465) || 465;
   const secure = env.SMTP_SECURE ? env.SMTP_SECURE === "true" : port === 465;
   // Plain-text SMTP is only for local test servers, never on any Vercel deployment.
   const local = host === "127.0.0.1" || host === "localhost";
   const allowInsecure = env.SMTP_ALLOW_INSECURE === "true" && local && !env.VERCEL && !env.VERCEL_ENV;
-  return { host, port, secure, user, pass, from, replyTo: env.SMTP_REPLY_TO?.trim() || null, allowInsecure };
+  return { host, port, secure, user, pass, from, replyTo: clean(env.SMTP_REPLY_TO) || null, allowInsecure };
 }
 
 let cached: { key: string; transport: Transporter } | null = null;
