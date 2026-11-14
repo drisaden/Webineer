@@ -1,3 +1,7 @@
+import type { WebinarWorkflowConfig } from "./webinar-workflow";
+
+export type * from "./webinar-workflow";
+
 export type WebinarStatus = "draft" | "scheduled" | "live" | "completed" | "paused";
 
 export type WebinarType = "live" | "automated" | "evergreen" | "on_demand" | "recurring";
@@ -282,6 +286,8 @@ export interface Webinar {
   tickets?: TicketType[];
   timelineEvents?: TimelineEvent[];
   registrationUrl?: string;
+  /** Nine-section creation workflow configuration (see types/webinar-workflow.ts). */
+  workflow?: WebinarWorkflowConfig;
   attendeeCount: number;
   registrationCount: number;
   tags: string[];
@@ -301,7 +307,7 @@ export interface Registration {
   company?: string;
   ticketTypeId?: string;
   ticketName?: string;
-  paymentStatus?: "free" | "pending" | "paid" | "refunded";
+  paymentStatus?: "free" | "pending" | "paid" | "failed" | "refunded";
   transactionId?: string;
   selectedSessionSlot?: string;
   registeredAt: string;
@@ -340,7 +346,8 @@ export type EmailTemplateType =
   | "thank_you"
   | "post_webinar_followup"
   | "purchase_confirmation"
-  | "cancellation_rescheduling";
+  | "cancellation_rescheduling"
+  | "host_new_registration";
 
 export interface EmailTemplate {
   id: string;

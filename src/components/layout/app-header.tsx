@@ -3,9 +3,9 @@
 import { Bell, HelpCircle, Menu, Moon, Search, SunMedium, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { APP_NAME } from "@/lib/constants/site";
 import { getStoredPreference, setStoredPreference } from "@/lib/storage/demo-storage";
 import { Sidebar } from "@/components/layout/sidebar";
+import { AccountMenu } from "@/components/auth/account-menu";
 
 const notifications = [
   { title: "Launch reminder sent", detail: "3 contacts received the event reminder" },
@@ -77,13 +77,7 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
             >
               <Bell className="h-4 w-4" />
             </button>
-            <div className="flex items-center gap-2 rounded-xl border border-white/60 bg-white/75 px-2 py-1.5 shadow-[0_10px_20px_rgba(15,23,42,0.03)]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#041B5E] text-xs font-semibold text-white">AM</div>
-              <div className="hidden text-left md:block">
-                <div className="text-sm font-medium text-primaryText">Avery Morgan</div>
-                <div className="text-[11px] text-secondaryText">{APP_NAME}</div>
-              </div>
-            </div>
+            <AccountMenu />
           </div>
         </div>
       </header>

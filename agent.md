@@ -361,3 +361,12 @@ Sensitive platform actions should be recorded with actor, target, reason, timest
 - Authentication and RBAC remain demo-safe until a real server-side auth layer is added.
 
 This addendum should be read together with the project constitution, secure admin requirements, and the Phase 03 architecture guidance.
+
+## 14. Webinar creation workflow
+
+Webinar creation is a nine-section, non-linear workflow (Configuration, Schedules,
+Registration, Notifications, Integrations, Thank You, Live, Replay, Finish) at
+`/dashboard/webinars/new` and `/dashboard/webinars/[id]/setup`. Its configuration is stored on
+the existing `Webinar` entity as `workflow` (no new tables) and projected onto the existing
+fields by `applyWorkflowToWebinar()`. All registration methods (hosted page, inline iframe,
+popup, button) share `POST /api/public/register`. See `docs/WEBINAR_WORKFLOW.md`.

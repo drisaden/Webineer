@@ -1,12 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { notYetAvailable } from "@/server/admin/data";
 
-const tickets = [
+export const dynamic = "force-dynamic";
+
+const demoTickets = [
   { id: "SUP-914", customer: "Maya Haddad", topic: "Ticket generation bug", priority: "High", status: "In progress" },
   { id: "SUP-915", customer: "Aisha Bello", topic: "Email campaign failure", priority: "Medium", status: "Waiting for customer" },
 ];
 
-export default function AdminSupportPage() {
+export default async function AdminSupportPage() {
+  const { rows: tickets, unavailable } = await notYetAvailable(demoTickets);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -14,7 +18,7 @@ export default function AdminSupportPage() {
           <h2 className="text-lg font-semibold text-primaryText">Support</h2>
           <p className="text-sm text-secondaryText">Customer support records and operational issue tracking</p>
         </div>
-        <Badge label="2 tickets" tone="info" />
+        <Badge label={unavailable ? "Not available yet" : `${tickets.length} tickets`} tone="info" />
       </div>
 
       <div className="overflow-x-auto">

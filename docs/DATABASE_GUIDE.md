@@ -1,45 +1,46 @@
 # Database Guide
 
-## Current implementation status
+## Status
 
-This repository is not yet connected to a live PostgreSQL database. The project currently uses mock data and local service adapters for demo operations.
+Prisma 7 + Supabase PostgreSQL. Schema: `prisma/schema.prisma`. Migrations: `prisma/migrations/`.
+The UI still reads the mock repository until Phase 3 swaps in Prisma-backed repositories.
 
-The database architecture is intentionally designed to support a future PostgreSQL + Prisma layer without rewriting the customer-facing application.
+## Connections
 
-## Recommended production architecture
+| Variable | Used by | Supabase connection |
+| --- | --- | --- |
+| `DATABASE_URL` | App runtime (Vercel) via `src/server/db/prisma.ts` | Transaction pooler, port 6543 |
+| `DIRECT_URL` | `prisma migrate` via `prisma.config.ts` | Direct / session pooler, port 5432 |
+| `DATABASE_SSL_CA` | Optional verified TLS | Supabase CA certificate (PEM or base64) |
 
-- PostgreSQL as the primary relational database
-- Prisma ORM for schema generation and migrations
-- Repository/service boundaries between UI and persistence
-- Server-side access only for database reads, writes, and admin operations
-- Explicit migration execution in deployment workflows
+## Commands
 
-## Local configuration
-
-Example environment entry:
-
-```env
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/Webineer_dev
+```bash
+npm install                 # also runs prisma generate (postinstall)
+npm run db:migrate:deploy   # apply migrations (production / Supabase)
+npm run db:migrate:dev      # create a new migration after editing the schema (dev only)
+npm run db:status
+TEST_DATABASE_URL=postgresql://.../webineer_test npm run test:db   # integration tests
 ```
 
-The app should not commit real credentials. Keep secrets in `.env.local` or a secure environment manager.
+Run `db:migrate:deploy` as an explicit release step (not inside `next build`), so preview
+deployments never migrate the production database.
+
+## Security model
+
+- Prisma uses a privileged role and **bypasses RLS**. Tenant isolation is enforced in
+  `src/server/auth/authorize.ts` (`requireOrgPermission`, `requireTenantWebinar`, `tenantWhere`).
+- Child tables reference webinars through `(webinar_id, organization_id)`, so Postgres rejects
+  rows whose organization differs from their webinar's.
+- RLS is enabled on every table with no policies, so Supabase's public Data API (anon /
+  authenticated keys) cannot read or write application data.
+- Platform admins live in `platform_admins`, separate from organization memberships. They are
+  created only by an existing super admin (no self-grants) or the one-time
+  `INITIAL_SUPER_ADMIN_EMAIL` bootstrap.
+- Ticket payments and subscription payments share the `payments` ledger but are separated by a
+  CHECK constraint on `purpose`.
 
 ## Migration policy
 
-- Generate migrations through the schema tool
-- Apply migrations in a controlled deployment pipeline
-- Avoid automatic destructive resets in production
-- Require explicit admin approval for destructive maintenance actions
-
-## pgAdmin connection example
-
-- Host: localhost
-- Port: 5432
-- Database: Webineer_dev
-- Username: postgres
-- Password: set in local environment or secret manager
-- SSL: disable for local development, enable depending on production provider requirements
-
-## Operational requirements
-
-The admin database page is a safe status overview for the current mock architecture. It should not be mistaken for a production database console.
+- Never edit an applied migration. Add a new one.
+- Avoid destructive resets in production. Back up before risky migrations.

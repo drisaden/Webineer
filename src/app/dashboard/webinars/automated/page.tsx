@@ -1,9 +1,14 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { mockWebinarRepository } from "@/services/mock-webinar-repository";
+import { getStore } from "@/server/repositories";
+import { getCurrentUser } from "@/lib/auth/demo-session";
 import { Badge } from "@/components/ui/badge";
 
-export default function AutomatedWebinarsPage() {
-  const webinars = mockWebinarRepository.listByStatus("live");
+export const dynamic = "force-dynamic";
+
+export default async function AutomatedWebinarsPage() {
+  const user = await getCurrentUser();
+  // Tenant-scoped: only the active workspace's webinars.
+  const webinars = user ? await getStore().listWebinarsByStatus(user.workspaceId, "live") : [];
 
   return (
     <DashboardShell title="Automated Webinars">

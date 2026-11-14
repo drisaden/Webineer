@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { systemHealth } from "@/data/mock/admin";
+import { adminSystemHealth } from "@/server/admin/data";
 
-export default function AdminSystemPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminSystemPage() {
+  const systemHealth = await adminSystemHealth();
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {systemHealth.map((item) => (

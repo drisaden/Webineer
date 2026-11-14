@@ -1,8 +1,12 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { redirect } from "next/navigation";
+import { getAudienceGroups } from "@/server/workspace-pages";
 
-const audienceGroups = [
+export const dynamic = "force-dynamic";
+
+const demoAudienceGroups = [
   { name: "Registered but never attended", count: 214, metric: "32%" },
   { name: "Attended at least once", count: 438, metric: "66%" },
   { name: "Purchased a ticket", count: 117, metric: "18%" },
@@ -10,7 +14,9 @@ const audienceGroups = [
   { name: "Watched replay", count: 284, metric: "41%" },
 ];
 
-export default function AudienceAnalyticsPage() {
+export default async function AudienceAnalyticsPage() {
+  const audienceGroups = await getAudienceGroups(demoAudienceGroups);
+  if (!audienceGroups) redirect("/login?next=/dashboard/analytics/audience");
   return (
     <DashboardShell title="Audience Analytics">
       <div className="space-y-6">

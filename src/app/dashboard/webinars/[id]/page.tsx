@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, CheckCircle2, Eye, LayoutTemplate, Play, Users, Video } from "lucide-react";
+import { CalendarClock, CheckCircle2, Eye, LayoutTemplate, Play, Settings2, Users, Video } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getEmbedUrl } from "@/providers/video";
-import { mockWebinarRepository } from "@/services/mock-webinar-repository";
+import { getStore } from "@/server/repositories";
+import { getCurrentUser, userCan } from "@/lib/auth/demo-session";
+import { DeleteWebinarButton } from "@/components/webinars/delete-webinar-button";
+
+export const dynamic = "force-dynamic";
 
 export default async function WebinarDetailPage({
   params,
@@ -13,9 +17,10 @@ export default async function WebinarDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const webinar = mockWebinarRepository.getById(id);
+  const [user, webinar] = await Promise.all([getCurrentUser(), getStore().getWebinar(id)]);
 
-  if (!webinar) {
+  // Tenant isolation: another workspace's webinar is indistinguishable from a missing one.
+  if (!webinar || !user || webinar.workspaceId !== user.workspaceId) {
     notFound();
   }
 
@@ -34,6 +39,12 @@ export default async function WebinarDetailPage({
             <p className="mt-1 text-sm text-white/70">{webinar.description}</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            {userCan(user, "webinar.delete") && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
+            <Button asChild variant="secondary" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+              <Link href={`/dashboard/webinars/${webinar.id}/setup`}>
+                <Settings2 className="mr-2 h-4 w-4" /> Edit setup
+              </Link>
+            </Button>
             <Button asChild variant="secondary" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
               <Link href={`/dashboard/webinars/${webinar.id}/landing-page`}>
                 <LayoutTemplate className="mr-2 h-4 w-4" /> Landing Page
@@ -41,7 +52,7 @@ export default async function WebinarDetailPage({
             </Button>
             {webinar.slug && (
               <Button asChild className="bg-[#16D6B2] text-[#101B35] hover:bg-[#0FC7A6]">
-                <Link href={`/room/${webinar.slug}`}>
+                <Link href={webinar.workflow ? `/room/${webinar.slug}?preview=host` : `/room/${webinar.slug}`}>
                   <Play className="mr-2 h-4 w-4" /> Join Room
                 </Link>
               </Button>
@@ -61,7 +72,11 @@ export default async function WebinarDetailPage({
               </div>
               <div className="overflow-hidden rounded-[1.5rem] border border-border bg-[#101B35]">
                 <div className="aspect-video w-full bg-[#111C2E]">
-                  <iframe src={embedUrl} title={webinar.title} className="h-full w-full" allowFullScreen />
+                  {embedUrl ? (
+                    <iframe src={embedUrl} title={webinar.title} className="h-full w-full" allowFullScreen />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-white/70">No video source configured yet.</div>
+                  )}
                 </div>
               </div>
             </div>

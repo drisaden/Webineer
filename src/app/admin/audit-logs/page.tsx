@@ -1,8 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { auditEvents } from "@/data/mock/admin";
+import { adminAudit } from "@/server/admin/data";
 
-export default function AdminAuditLogsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminAuditLogsPage() {
+  const auditEvents = await adminAudit();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">

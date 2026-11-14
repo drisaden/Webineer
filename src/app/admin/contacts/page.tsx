@@ -1,13 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminContacts } from "@/server/admin/data";
 
-const contacts = [
+export const dynamic = "force-dynamic";
+
+const demoContacts = [
   { name: "Aisha Bello", email: "aisha@northstarstudio.co", source: "Newsletter", status: "active" },
   { name: "Oluwaseun Dada", email: "oluwa@mentorloop.ai", source: "Landing page", status: "active" },
   { name: "Maya Haddad", email: "maya@launchroom.co", source: "Manual import", status: "paused" },
 ];
 
-export default function AdminContactsPage() {
+export default async function AdminContactsPage() {
+  const contacts = await adminContacts(demoContacts);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -15,7 +19,7 @@ export default function AdminContactsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Contacts</h2>
           <p className="text-sm text-secondaryText">Audience and workspace contacts</p>
         </div>
-        <Badge label="3 records" tone="info" />
+        <Badge label={`${contacts.length} records`} tone="info" />
       </div>
 
       <div className="divide-y divide-border">

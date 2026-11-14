@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformUsers } from "@/data/mock/admin";
+import { adminUsers } from "@/server/admin/data";
 
-export default function AdminUsersPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminUsersPage() {
+  const platformUsers = await adminUsers();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -10,7 +13,7 @@ export default function AdminUsersPage() {
           <h2 className="text-lg font-semibold text-primaryText">Users</h2>
           <p className="text-sm text-secondaryText">Platform-wide user records and workspace access</p>
         </div>
-        <Badge label="12 search results" tone="info" />
+        <Badge label={`${platformUsers.length} users`} tone="info" />
       </div>
 
       <div className="overflow-x-auto">

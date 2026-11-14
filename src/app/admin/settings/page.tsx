@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminSettings } from "@/server/admin/data";
 
-const settings = [
+export const dynamic = "force-dynamic";
+
+const demoSettings = [
   { section: "General", value: "Platform name and branding" },
   { section: "Registration", value: "Email verification required" },
   { section: "Email", value: "SMTP and sender defaults enabled" },
@@ -10,7 +13,8 @@ const settings = [
   { section: "Maintenance", value: "Maintenance mode disabled" },
 ];
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const settings = await adminSettings(demoSettings);
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {settings.map((setting) => (

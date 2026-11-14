@@ -2,9 +2,14 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, LayoutTemplate, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { mockWebinars } from "@/data/mock/webinars";
+import { getCurrentUser } from "@/lib/auth/demo-session";
+import { getStore } from "@/server/repositories";
 
-export default function LandingPagesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LandingPagesPage() {
+  const user = await getCurrentUser();
+  const webinars = user ? await getStore().listWebinars(user.workspaceId) : [];
   return (
     <DashboardShell title="Landing Pages">
       <div className="space-y-5">
@@ -19,7 +24,8 @@ export default function LandingPagesPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {mockWebinars.map((webinar) => (
+          {webinars.length === 0 && <p className="text-sm text-secondaryText">No webinars yet. Each webinar gets its own registration page.</p>}
+          {webinars.map((webinar) => (
             <div key={webinar.id} className="rounded-[1.5rem] border border-border bg-white p-5 shadow-soft">
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#EAFBF5] px-2.5 py-1 text-xs font-medium text-[#0F7B52]">

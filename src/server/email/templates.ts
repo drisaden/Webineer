@@ -1,0 +1,101 @@
+import { escapeHtml } from "@/lib/webinar-workflow/email-render";
+import { button, fallbackLink, renderLayout } from "./layout";
+
+export interface RenderedEmail {
+  subject: string;
+  html: string;
+  text: string;
+}
+
+export type AuthEmailAction =
+  | "signup"
+  | "recovery"
+  | "invite"
+  | "magiclink"
+  | "email"
+  | "email_change"
+  | "reauthentication"
+  | "password_changed_notification"
+  | "email_changed_notification";
+
+const AUTH_COPY: Record<AuthEmailAction, { subject: string; heading: string; intro: string; cta?: string; outro: string }> = {
+  signup: { subject: "Confirm your Webineer account", heading: "Confirm your email", intro: "Thanks for signing up for Webineer. Confirm your email address to activate your account.", cta: "Confirm email", outro: "If you didn’t create an account, you can ignore this email." },
+  recovery: { subject: "Reset your Webineer password", heading: "Reset your password", intro: "We received a request to reset the password for your Webineer account.", cta: "Choose a new password", outro: "If you didn’t ask for this, you can ignore this email. Your password won’t change." },
+  invite: { subject: "You’ve been invited to Webineer", heading: "You’re invited", intro: "You’ve been invited to join a workspace on Webineer. Accept the invitation to set up your account.", cta: "Accept invitation", outro: "If you weren’t expecting this invitation, you can ignore this email." },
+  magiclink: { subject: "Your Webineer sign-in link", heading: "Sign in to Webineer", intro: "Use the button below to sign in.", cta: "Sign in", outro: "If you didn’t request this, you can ignore this email." },
+  email: { subject: "Your Webineer sign-in link", heading: "Sign in to Webineer", intro: "Use the button below to sign in.", cta: "Sign in", outro: "If you didn’t request this, you can ignore this email." },
+  email_change: { subject: "Confirm your email change", heading: "Confirm your email change", intro: "Confirm this change to the email address on your Webineer account.", cta: "Confirm change", outro: "If you didn’t request this change, contact support right away." },
+  reauthentication: { subject: "Your Webineer verification code", heading: "Verification code", intro: "Enter this code to confirm it’s you:", outro: "If you didn’t request this, someone may be trying to access your account. Consider changing your password." },
+  password_changed_notification: { subject: "Your Webineer password was changed", heading: "Password changed", intro: "The password for your Webineer account was just changed.", outro: "If this wasn’t you, reset your password immediately and contact support." },
+  email_changed_notification: { subject: "Your Webineer email address was changed", heading: "Email address changed", intro: "The email address on your Webineer account was just changed.", outro: "If this wasn’t you, contact support immediately." },
+};
+
+export const AUTH_ACTIONS = Object.keys(AUTH_COPY) as AuthEmailAction[];
+
+export function renderAuthEmail(action: AuthEmailAction, opts: { link?: string; code?: string; expiresHint?: string }): RenderedEmail {
+  const c = AUTH_COPY[action];
+  const parts = [`<h1 style="margin:0 0 16px;font-size:22px;color:#101B35;">${escapeHtml(c.heading)}</h1>`, `<p>${escapeHtml(c.intro)}</p>`];
+  const text = [c.heading, "", c.intro];
+  if (opts.code) {
+    parts.push(`<p style="font-size:28px;font-weight:bold;letter-spacing:6px;text-align:center;margin:24px 0;">${escapeHtml(opts.code)}</p>`);
+    text.push("", opts.code);
+  }
+  if (c.cta && opts.link) {
+    parts.push(button(opts.link, c.cta), fallbackLink(opts.link));
+    text.push("", `${c.cta}: ${opts.link}`);
+  }
+  if (opts.expiresHint) {
+    parts.push(`<p style="font-size:13px;color:#64748B;">${escapeHtml(opts.expiresHint)}</p>`);
+    text.push("", opts.expiresHint);
+  }
+  parts.push(`<p style="font-size:13px;color:#64748B;">${escapeHtml(c.outro)}</p>`);
+  text.push("", c.outro);
+  return { subject: c.subject, html: renderLayout({ contentHtml: parts.join("\n"), preheader: c.intro }), text: text.join("\n") };
+}
+
+const SYMBOLS: Record<string, string> = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
+const money = (amount: number, currency: string) => `${SYMBOLS[currency] ?? `${currency} `}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export function renderReceipt(opts: {
+  kind: "ticket" | "subscription";
+  name: string;
+  itemTitle: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  paidAt: Date;
+  link?: string;
+  linkLabel?: string;
+  periodEnd?: Date | null;
+  testMode?: boolean;
+}): RenderedEmail {
+  const date = opts.paidAt.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " (WAT)";
+  const rows: [string, string][] = [
+    [opts.kind === "ticket" ? "Webinar" : "Plan", opts.itemTitle],
+    ["Amount", money(opts.amount, opts.currency)],
+    ["Reference", opts.reference],
+    ["Date", date],
+  ];
+  if (opts.periodEnd) rows.push(["Active until", opts.periodEnd.toLocaleDateString("en-GB", { dateStyle: "long" })]);
+  const subject = opts.kind === "ticket" ? `Payment received: ${opts.itemTitle}` : `Receipt: Webineer ${opts.itemTitle}`;
+  const intro = opts.kind === "ticket" ? "Thanks — your payment was received and your seat is confirmed." : "Thanks — your payment was received and your plan is active.";
+  const first = opts.name.split(/\s+/)[0] || "there";
+  const table = `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #E4E9F1;border-radius:8px;margin:20px 0;">${rows
+    .map(([k, v]) => `<tr><td style="padding:10px 14px;color:#64748B;font-size:13px;border-bottom:1px solid #E4E9F1;">${escapeHtml(k)}</td><td style="padding:10px 14px;font-weight:bold;text-align:right;border-bottom:1px solid #E4E9F1;">${escapeHtml(v)}</td></tr>`)
+    .join("")}</table>`;
+  const content = [
+    `<p>Hi ${escapeHtml(first)},</p>`,
+    `<p>${escapeHtml(intro)}</p>`,
+    table,
+    opts.link && opts.linkLabel ? button(opts.link, opts.linkLabel) : "",
+    opts.testMode ? `<p style="font-size:12px;color:#B87514;">Test payment — no real money was charged.</p>` : "",
+    `<p style="font-size:13px;color:#64748B;">Payments are processed securely by Flutterwave. Keep this email for your records.</p>`,
+  ].join("\n");
+  const text = [`Hi ${first},`, "", intro, "", ...rows.map(([k, v]) => `${k}: ${v}`), opts.link ? `\n${opts.linkLabel}: ${opts.link}` : "", opts.testMode ? "\nTest payment — no real money was charged." : ""].join("\n");
+  return { subject, html: renderLayout({ contentHtml: content, preheader: intro }), text };
+}
+
+/** Wrap a workflow/system body fragment (already escaped HTML) in the branded layout. */
+export function wrapFragment(fragmentHtml: string, preheader?: string): string {
+  return renderLayout({ contentHtml: fragmentHtml, preheader });
+}

@@ -3,9 +3,16 @@ import { CalendarClock, Search, SlidersHorizontal, Plus } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockWebinars } from "@/data/mock/webinars";
+import { getStore } from "@/server/repositories";
+import { getCurrentUser } from "@/lib/auth/demo-session";
 
-export default function WebinarListPage() {
+// Reads the live repository so newly created drafts and published webinars appear.
+export const dynamic = "force-dynamic";
+
+export default async function WebinarListPage() {
+  const user = await getCurrentUser();
+  // Tenant-scoped: only the active workspace's webinars.
+  const webinars = user ? await getStore().listWebinars(user.workspaceId) : [];
   return (
     <DashboardShell title="All Webinars">
       <div className="space-y-5">
@@ -28,7 +35,7 @@ export default function WebinarListPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {mockWebinars.map((webinar) => (
+          {webinars.map((webinar) => (
             <div key={webinar.id} className="overflow-hidden rounded-[1.5rem] border border-border bg-white shadow-soft">
               <div className="h-40 bg-gradient-to-br from-[#17294B] via-[#101B35] to-[#16D6B2]/70 p-4 text-white">
                 <div className="flex items-center justify-between">
@@ -51,10 +58,10 @@ export default function WebinarListPage() {
                 <div className="mt-5 flex items-center justify-between">
                   <span className="text-sm text-secondaryText">{webinar.registrationCount} registrations</span>
                   <div className="flex items-center gap-2">
-                    <Link href={`/dashboard/webinars/${webinar.id}`} className="text-sm font-medium text-[#17294B] hover:underline">
-                      Manage
+                    <Link href={webinar.status === "draft" ? `/dashboard/webinars/${webinar.id}/setup` : `/dashboard/webinars/${webinar.id}`} className="text-sm font-medium text-[#17294B] hover:underline">
+                      {webinar.status === "draft" ? "Continue setup" : "Manage"}
                     </Link>
-                    {webinar.slug && (
+                    {webinar.slug && webinar.status !== "draft" && (
                       <>
                         <span className="text-border">|</span>
                         <Link href={`/w/${webinar.slug}`} className="text-sm font-medium text-[#16D6B2] hover:underline">

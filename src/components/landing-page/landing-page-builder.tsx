@@ -34,7 +34,7 @@ export function LandingPageBuilder({ webinar }: { webinar: Webinar }) {
                 <Link href={webinar.slug ? `/w/${webinar.slug}` : `/w/${webinar.id}`}>Preview page</Link>
               </Button>
               <Button variant="secondary" asChild>
-                <Link href="/dashboard/landing-pages">Save draft</Link>
+                <Link href={`/dashboard/webinars/${webinar.id}/setup?section=registration`}>Edit page content</Link>
               </Button>
             </div>
           </div>

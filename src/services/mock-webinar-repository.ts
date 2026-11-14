@@ -68,8 +68,59 @@ export const mockVideoProviders: VideoProvider[] = [
   },
 ];
 
-const webinarsState: Webinar[] = [...mockWebinars];
-const registrationsState: Registration[] = [...mockRegistrations];
+/**
+ * Mock store shared across the whole server process.
+ *
+ * Kept on globalThis so route handlers, server components and dev hot reloads
+ * all see the same in-memory data. A persistence adapter (see
+ * src/services/server/mock-file-persistence.ts, registered from
+ * src/instrumentation.ts) can snapshot webinars and registrations to disk in
+ * local development. Production should replace this repository with the
+ * Prisma/Supabase implementation behind the same interface.
+ */
+export interface MockStoreSnapshot {
+  webinars: Webinar[];
+  registrations: Registration[];
+}
+
+export interface MockPersistenceAdapter {
+  save(snapshot: MockStoreSnapshot): void;
+}
+
+interface MockStore extends MockStoreSnapshot {
+  persistence?: MockPersistenceAdapter;
+}
+
+const globalStore = globalThis as typeof globalThis & { __webineerMockStore?: MockStore };
+
+function getStore(): MockStore {
+  if (!globalStore.__webineerMockStore) {
+    globalStore.__webineerMockStore = {
+      webinars: [...mockWebinars],
+      registrations: [...mockRegistrations],
+    };
+  }
+  return globalStore.__webineerMockStore;
+}
+
+/** Replace the in-memory data (used when loading a persisted snapshot). */
+export function hydrateMockStore(snapshot: Partial<MockStoreSnapshot>) {
+  const store = getStore();
+  if (Array.isArray(snapshot.webinars) && snapshot.webinars.length > 0) store.webinars.splice(0, store.webinars.length, ...snapshot.webinars);
+  if (Array.isArray(snapshot.registrations)) store.registrations.splice(0, store.registrations.length, ...snapshot.registrations);
+}
+
+export function setMockPersistenceAdapter(adapter: MockPersistenceAdapter | undefined) {
+  getStore().persistence = adapter;
+}
+
+function persist() {
+  const store = getStore();
+  store.persistence?.save({ webinars: store.webinars, registrations: store.registrations });
+}
+
+const webinarsState: Webinar[] = getStore().webinars;
+const registrationsState: Registration[] = getStore().registrations;
 const ticketsState: TicketType[] = [...mockTickets];
 const timelineEventsState: TimelineEvent[] = [...mockTimelineEvents];
 const discountCodesState: DiscountCode[] = [...mockDiscountCodes];
@@ -153,12 +204,16 @@ export interface WebinarRepository {
   listByType(type: Webinar["type"]): Webinar[];
   getById(id: string): Webinar | undefined;
   getBySlug(slug: string): Webinar | undefined;
+  getByPublicId(publicId: string): Webinar | undefined;
   save(webinar: Webinar): Webinar;
   delete(id: string): boolean;
   
   // Registrations
   listRegistrations(webinarId?: string): Registration[];
   addRegistration(registration: Registration): Registration;
+  getRegistration(id: string): Registration | undefined;
+  findRegistrationByEmail(webinarId: string, email: string): Registration | undefined;
+  updateRegistration(id: string, patch: Partial<Registration>): Registration | undefined;
   
   // Tickets & Monetization
   listTickets(webinarId: string): TicketType[];
@@ -194,21 +249,27 @@ export const mockWebinarRepository: WebinarRepository = {
   getBySlug(slug) {
     return webinarsState.find((webinar) => webinar.slug === slug);
   },
+  getByPublicId(publicId) {
+    return webinarsState.find((webinar) => webinar.workflow?.publicId === publicId);
+  },
   save(webinar) {
     const idx = webinarsState.findIndex((w) => w.id === webinar.id);
+    let result: Webinar;
     if (idx >= 0) {
       webinarsState[idx] = { ...webinar, updatedAt: new Date().toISOString() };
-      return webinarsState[idx];
+      result = webinarsState[idx];
     } else {
-      const created = { ...webinar, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      webinarsState.unshift(created);
-      return created;
+      result = { ...webinar, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      webinarsState.unshift(result);
     }
+    persist();
+    return result;
   },
   delete(id) {
     const idx = webinarsState.findIndex((w) => w.id === id);
     if (idx >= 0) {
       webinarsState.splice(idx, 1);
+      persist();
       return true;
     }
     return false;
@@ -225,7 +286,24 @@ export const mockWebinarRepository: WebinarRepository = {
     if (webinar) {
       webinar.registrationCount += 1;
     }
+    persist();
     return registration;
+  },
+  getRegistration(id) {
+    return registrationsState.find((r) => r.id === id);
+  },
+  findRegistrationByEmail(webinarId, email) {
+    const normalized = email.trim().toLowerCase();
+    return registrationsState.find(
+      (r) => r.webinarId === webinarId && r.email.toLowerCase() === normalized && r.status !== "cancelled",
+    );
+  },
+  updateRegistration(id, patch) {
+    const idx = registrationsState.findIndex((r) => r.id === id);
+    if (idx < 0) return undefined;
+    registrationsState[idx] = { ...registrationsState[idx], ...patch, id };
+    persist();
+    return registrationsState[idx];
   },
   listTickets(webinarId) {
     return ticketsState.filter((t) => t.webinarId === webinarId);

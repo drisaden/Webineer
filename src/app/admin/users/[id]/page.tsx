@@ -1,9 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformUsers } from "@/data/mock/admin";
+import { adminUser } from "@/server/admin/data";
 
-export default function AdminUserDetailPage({ params }: { params: { id: string } }) {
-  const user = platformUsers.find((entry) => entry.id === params.id) ?? platformUsers[0];
+export const dynamic = "force-dynamic";
+
+export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { user, stats, lastAdminAction } = await adminUser(id);
 
   return (
     <div className="space-y-6">
@@ -37,9 +40,9 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
           <h3 className="text-lg font-semibold text-primaryText">Workspace activity</h3>
           <div className="mt-4 space-y-3 text-sm text-secondaryText">
             <p>• Created workspaces: {user.workspaceCount}</p>
-            <p>• Published webinars: 9</p>
-            <p>• Registrations: 2,540</p>
-            <p>• Automations: 5</p>
+            <p>• Published webinars: {stats.webinars}</p>
+            <p>• Registrations: {stats.registrations.toLocaleString()}</p>
+            <p>• Automated emails sent: {stats.automations}</p>
           </div>
         </Card>
 
@@ -48,8 +51,7 @@ export default function AdminUserDetailPage({ params }: { params: { id: string }
           <div className="mt-4 space-y-3 text-sm text-secondaryText">
             <p>• Registered: {user.registrationDate}</p>
             <p>• Last login: {user.lastActivity}</p>
-            <p>• Support notes: 1 recent note</p>
-            <p>• Last admin action: User account reviewed</p>
+            <p>• Last admin action: {lastAdminAction}</p>
           </div>
         </Card>
       </div>

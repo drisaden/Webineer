@@ -1,0 +1,742 @@
+// Webineer production schema (Supabase PostgreSQL via Prisma).
+//
+// Conventions
+// - Tables/columns are snake_case in Postgres, camelCase in Prisma.
+// - Every tenant-owned table carries `organization_id`. Children of a webinar
+//   reference it through the composite key (webinar_id, organization_id), so
+//   the database itself rejects rows whose organization differs from their
+//   webinar's organization.
+// - Prisma connects with a privileged role and bypasses Supabase RLS. Tenant
+//   isolation is enforced in the server-side data layer (src/server/db) and
+//   RLS is enabled without policies so the Supabase Data API (anon /
+//   authenticated keys) cannot read these tables at all.
+// - users.id equals the Supabase Auth user id (auth.users.id).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  PLATFORM_ADMIN
+  SUPPORT_ADMIN
+  FINANCE_ADMIN
+  TECHNICAL_ADMIN
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  EDITOR
+  HOST
+  ANALYST
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum PlanCode {
+  FREE
+  STARTER
+  PROFESSIONAL
+  BUSINESS
+}
+
+enum CurrencyCode {
+  NGN
+  USD
+  EUR
+  GBP
+}
+
+enum WebinarStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+}
+
+enum WebinarType {
+  LIVE
+  AUTOMATED
+  EVERGREEN
+  ON_DEMAND
+  RECURRING
+}
+
+enum WebinarMode {
+  RIGHT_NOW
+  SCHEDULE_LATER
+  ALWAYS_ON
+}
+
+enum VideoProvider {
+  YOUTUBE
+  VIMEO
+  WISTIA
+  CUSTOM_IFRAME
+  CUSTOM_URL
+  UPLOADED_VIDEO
+  EXTERNAL_LIVE_STREAM
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+  COMPLETED
+}
+
+enum LandingPageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RegistrationSource {
+  HOSTED
+  INLINE
+  POPUP
+  BUTTON
+  DIRECT
+  IMPORT
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  ATTENDED
+  CONVERTED
+  CANCELLED
+}
+
+enum RegistrationPaymentStatus {
+  FREE
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentPurpose {
+  WEBINAR_TICKET
+  PLATFORM_SUBSCRIPTION
+}
+
+enum PaymentProvider {
+  FLUTTERWAVE
+  SIMULATED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum EmailStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum JobRunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Identity & tenancy
+// ---------------------------------------------------------------------------
+
+/// Application profile for a Supabase Auth user. `id` = auth.users.id.
+model User {
+  id              String     @id @db.Uuid
+  email           String     @unique
+  name            String     @default("")
+  title           String?
+  avatarUrl       String?    @map("avatar_url")
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(6)
+  lastSignInAt    DateTime?  @map("last_sign_in_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  memberships     Membership[]
+  platformAdmin   PlatformAdmin?  @relation("PlatformAdminUser")
+  grantedAdmins   PlatformAdmin[] @relation("PlatformAdminGrantedBy")
+  ownedWebinars   Webinar[]       @relation("WebinarOwner")
+  sentInvitations Invitation[]    @relation("InvitationInviter")
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+/// Platform (super-admin) roles. Kept apart from organization memberships so
+/// no organization role can ever imply platform access. Rows are only created
+/// by an existing super admin or the INITIAL_SUPER_ADMIN_EMAIL bootstrap.
+model PlatformAdmin {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @unique @map("user_id") @db.Uuid
+  role        PlatformRole
+  grantedById String?      @map("granted_by_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt   DateTime?    @map("revoked_at") @db.Timestamptz(6)
+
+  user      User  @relation("PlatformAdminUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("PlatformAdminGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@map("platform_admins")
+}
+
+model Organization {
+  id           String             @id @default(uuid()) @db.Uuid
+  name         String
+  slug         String             @unique
+  plan         PlanCode           @default(FREE)
+  status       OrganizationStatus @default(ACTIVE)
+  timezone     String             @default("Africa/Lagos")
+  currency     CurrencyCode       @default(NGN)
+  branding     Json?
+  customDomain String?            @unique @map("custom_domain")
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime?          @map("deleted_at") @db.Timestamptz(6)
+
+  memberships     Membership[]
+  invitations     Invitation[]
+  webinars        Webinar[]
+  presenters      Presenter[]
+  sessions        WebinarSession[]
+  landingPages    LandingPage[]
+  registrations   Registration[]
+  attendees       Attendee[]
+  payments        Payment[]
+  subscriptions   Subscription[]
+  emailLogs       EmailLog[]
+  jobs            AutomationJob[]
+  auditLogs       AuditLog[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  role           OrgRole
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  email          String
+  role           OrgRole
+  /// SHA-256 of the invitation token; the raw token is only ever emailed.
+  tokenHash      String           @unique @map("token_hash")
+  invitedById    String?          @map("invited_by_id") @db.Uuid
+  status         InvitationStatus @default(PENDING)
+  expiresAt      DateTime         @map("expires_at") @db.Timestamptz(6)
+  acceptedAt     DateTime?        @map("accepted_at") @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User?        @relation("InvitationInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([email])
+  @@map("invitations")
+}
+
+// ---------------------------------------------------------------------------
+// Webinars
+// ---------------------------------------------------------------------------
+
+model Webinar {
+  id                String         @id @default(uuid()) @db.Uuid
+  organizationId    String         @map("organization_id") @db.Uuid
+  ownerId           String?        @map("owner_id") @db.Uuid
+  /// Public URL slug (/w/{slug}); globally unique because URLs are not tenant-prefixed.
+  slug              String         @unique
+  /// Non-guessable id used by embeds (/embed/{publicId}).
+  publicId          String         @unique @map("public_id")
+  title             String
+  description       String         @default("")
+  status            WebinarStatus  @default(DRAFT)
+  type              WebinarType    @default(LIVE)
+  mode              WebinarMode?
+  category          String?
+  coverImageUrl     String?        @map("cover_image_url")
+  timezone          String         @default("Africa/Lagos")
+  durationMinutes   Int            @default(60) @map("duration_minutes")
+  /// Next/primary session start, denormalised for listing and sorting.
+  startsAt          DateTime?      @map("starts_at") @db.Timestamptz(6)
+  endsAt            DateTime?      @map("ends_at") @db.Timestamptz(6)
+  videoProvider     VideoProvider? @map("video_provider")
+  videoUrl          String?        @map("video_url")
+  /// Nine-section workflow configuration (types/webinar-workflow.ts).
+  workflow          Json?
+  workflowVersion   Int            @default(1) @map("workflow_version")
+  tags              String[]       @default([])
+  registrationCount Int            @default(0) @map("registration_count")
+  attendeeCount     Int            @default(0) @map("attendee_count")
+  publishedAt       DateTime?      @map("published_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?      @map("deleted_at") @db.Timestamptz(6)
+
+  organization  Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner         User?            @relation("WebinarOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  presenters    Presenter[]
+  sessions      WebinarSession[]
+  landingPages  LandingPage[]
+  registrations Registration[]
+  attendees     Attendee[]
+  payments      Payment[]
+  emailLogs     EmailLog[]
+  analytics     AnalyticsEvent[]
+
+  /// Target for tenant-safe composite foreign keys from child tables.
+  @@unique([id, organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, startsAt])
+  @@index([status, startsAt])
+  @@map("webinars")
+}
+
+model Presenter {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  webinarId      String   @map("webinar_id") @db.Uuid
+  name           String
+  title          String?
+  bio            String?
+  avatarUrl      String?  @map("avatar_url")
+  email          String?
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar      Webinar      @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@index([webinarId, organizationId])
+  @@index([organizationId])
+  @@map("presenters")
+}
+
+/// Concrete, timezone-aware session instances (one-off or expanded recurrences).
+model WebinarSession {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  webinarId      String        @map("webinar_id") @db.Uuid
+  /// Stable key from the workflow (session id or recurrence instance id).
+  sourceKey      String        @map("source_key")
+  startsAt       DateTime      @map("starts_at") @db.Timestamptz(6)
+  endsAt         DateTime      @map("ends_at") @db.Timestamptz(6)
+  timezone       String
+  status         SessionStatus @default(OPEN)
+  capacity       Int?
+  isRecurring    Boolean       @default(false) @map("is_recurring")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar       Webinar        @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  registrations Registration[]
+  attendees     Attendee[]
+
+  @@unique([webinarId, sourceKey])
+  @@unique([id, organizationId])
+  @@index([webinarId, organizationId])
+  @@index([organizationId, startsAt])
+  @@index([status, startsAt])
+  @@map("webinar_sessions")
+}
+
+model LandingPage {
+  id             String            @id @default(uuid()) @db.Uuid
+  organizationId String            @map("organization_id") @db.Uuid
+  webinarId      String            @map("webinar_id") @db.Uuid
+  title          String
+  description    String            @default("")
+  status         LandingPageStatus @default(DRAFT)
+  sections       Json              @default("[]")
+  settings       Json?
+  publishedAt    DateTime?         @map("published_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar      Webinar      @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@index([webinarId, organizationId])
+  @@index([organizationId, status])
+  @@map("landing_pages")
+}
+
+// ---------------------------------------------------------------------------
+// Audience
+// ---------------------------------------------------------------------------
+
+/// One registration per email per webinar. Personal room/replay links are
+/// derived with an HMAC of the registration id (REGISTRATION_LINK_SECRET), so
+/// no access secret is stored here.
+model Registration {
+  id              String                    @id @default(uuid()) @db.Uuid
+  organizationId  String                    @map("organization_id") @db.Uuid
+  webinarId       String                    @map("webinar_id") @db.Uuid
+  sessionId       String?                   @map("session_id") @db.Uuid
+  /// Stored lower-cased.
+  email           String
+  name            String
+  phone           String?
+  company         String?
+  answers         Json                      @default("{}")
+  source          RegistrationSource        @default(DIRECT)
+  status          RegistrationStatus        @default(REGISTERED)
+  paymentStatus   RegistrationPaymentStatus @default(FREE) @map("payment_status")
+  sessionStartsAt DateTime?                 @map("session_starts_at") @db.Timestamptz(6)
+  embedOrigin     String?                   @map("embed_origin")
+  metadata        Json?
+  registeredAt    DateTime                  @default(now()) @map("registered_at") @db.Timestamptz(6)
+  cancelledAt     DateTime?                 @map("cancelled_at") @db.Timestamptz(6)
+  updatedAt       DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar      Webinar         @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  session      WebinarSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  attendees    Attendee[]
+  payments     Payment[]
+  emailLogs    EmailLog[]
+
+  @@unique([webinarId, email])
+  @@unique([id, organizationId])
+  @@index([organizationId, registeredAt])
+  @@index([webinarId, organizationId, status])
+  @@index([email])
+  @@map("registrations")
+}
+
+/// Attendance records (room entries); a registrant may join several times.
+model Attendee {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  webinarId      String    @map("webinar_id") @db.Uuid
+  registrationId String?   @map("registration_id") @db.Uuid
+  sessionId      String?   @map("session_id") @db.Uuid
+  name           String?
+  email          String?
+  joinedAt       DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  leftAt         DateTime? @map("left_at") @db.Timestamptz(6)
+  watchSeconds   Int       @default(0) @map("watch_seconds")
+  completed      Boolean   @default(false)
+  ctaClicked     Boolean   @default(false) @map("cta_clicked")
+  device         String?
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar      Webinar         @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  registration Registration?   @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  session      WebinarSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([webinarId, organizationId])
+  @@index([registrationId])
+  @@index([organizationId, joinedAt])
+  @@map("attendees")
+}
+
+// ---------------------------------------------------------------------------
+// Payments & billing
+// ---------------------------------------------------------------------------
+
+/// Every payment attempt. Webinar ticket payments and platform subscription
+/// payments share this ledger but are separated by `purpose` and cannot be
+/// confused: ticket payments link to a registration, subscription payments to
+/// a subscription (enforced by a CHECK constraint in the migration).
+model Payment {
+  id                    String          @id @default(uuid()) @db.Uuid
+  organizationId        String          @map("organization_id") @db.Uuid
+  purpose               PaymentPurpose
+  provider              PaymentProvider
+  status                PaymentStatus   @default(PENDING)
+  amount                Decimal         @db.Decimal(14, 2)
+  currency              CurrencyCode
+  /// Our reference sent to the gateway (Flutterwave tx_ref).
+  txRef                 String          @unique @map("tx_ref")
+  /// Gateway transaction id, recorded only after server-side verification.
+  providerTransactionId String?         @unique @map("provider_transaction_id")
+  idempotencyKey        String          @unique @map("idempotency_key")
+  webinarId             String?         @map("webinar_id") @db.Uuid
+  registrationId        String?         @map("registration_id") @db.Uuid
+  subscriptionId        String?         @map("subscription_id") @db.Uuid
+  customerEmail         String          @map("customer_email")
+  customerName          String?         @map("customer_name")
+  checkoutUrl           String?         @map("checkout_url")
+  verification          Json?
+  /// What was bought (plan/interval for subscriptions, price snapshot for tickets).
+  metadata              Json?
+  failureReason         String?         @map("failure_reason")
+  verifiedAt            DateTime?       @map("verified_at") @db.Timestamptz(6)
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  /// Restrict: financial records keep their webinar; webinars are soft-deleted.
+  webinar      Webinar?       @relation(fields: [webinarId], references: [id], onDelete: Restrict)
+  registration Registration?  @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  subscription Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  events       PaymentEvent[]
+
+  @@index([organizationId, purpose, createdAt])
+  @@index([registrationId])
+  @@index([subscriptionId])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+/// Append-only transaction log: initialisation, verification results and
+/// incoming webhooks. `dedupeKey` makes webhook processing idempotent.
+model PaymentEvent {
+  id             String          @id @default(uuid()) @db.Uuid
+  paymentId      String?         @map("payment_id") @db.Uuid
+  provider       PaymentProvider
+  eventType      String          @map("event_type")
+  dedupeKey      String          @unique @map("dedupe_key")
+  signatureValid Boolean?        @map("signature_valid")
+  payload        Json
+  processedAt    DateTime?       @map("processed_at") @db.Timestamptz(6)
+  error          String?
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId, createdAt])
+  @@map("payment_events")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  organizationId         String             @map("organization_id") @db.Uuid
+  plan                   PlanCode
+  status                 SubscriptionStatus @default(TRIALING)
+  interval               BillingInterval    @default(MONTHLY)
+  amount                 Decimal            @db.Decimal(14, 2)
+  currency               CurrencyCode
+  provider               PaymentProvider
+  providerSubscriptionId String?            @unique @map("provider_subscription_id")
+  currentPeriodStart     DateTime?          @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz(6)
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  cancelledAt            DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payments     Payment[]
+
+  @@index([organizationId, status])
+  @@map("subscriptions")
+}
+
+// ---------------------------------------------------------------------------
+// Email, automation, analytics, audit
+// ---------------------------------------------------------------------------
+
+model EmailLog {
+  id                String      @id @default(uuid()) @db.Uuid
+  organizationId    String?     @map("organization_id") @db.Uuid
+  webinarId         String?     @map("webinar_id") @db.Uuid
+  registrationId    String?     @map("registration_id") @db.Uuid
+  template          String
+  toEmail           String      @map("to_email")
+  toName            String?     @map("to_name")
+  subject           String
+  status            EmailStatus @default(QUEUED)
+  provider          String      @default("smtp")
+  providerMessageId String?     @map("provider_message_id")
+  attempts          Int         @default(0)
+  lastError         String?     @map("last_error")
+  /// Prevents the same logical email (e.g. a specific reminder) being sent twice.
+  dedupeKey         String?     @unique @map("dedupe_key")
+  /// Rendered content kept only until delivery (retries); cleared once sent or permanently failed.
+  bodyHtml          String?     @map("body_html")
+  bodyText          String?     @map("body_text")
+  scheduledFor      DateTime?   @map("scheduled_for") @db.Timestamptz(6)
+  sentAt            DateTime?   @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  webinar      Webinar?      @relation(fields: [webinarId], references: [id], onDelete: SetNull)
+  registration Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([status, scheduledFor])
+  @@index([registrationId])
+  @@map("email_logs")
+}
+
+/// Database-backed job queue processed by Vercel Cron (no permanent workers).
+model AutomationJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String?   @map("organization_id") @db.Uuid
+  type           String
+  payload        Json      @default("{}")
+  status         JobStatus @default(PENDING)
+  runAt          DateTime  @default(now()) @map("run_at") @db.Timestamptz(6)
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(5) @map("max_attempts")
+  /// Unique key so the same job can never be enqueued twice.
+  dedupeKey      String?   @unique @map("dedupe_key")
+  lockedAt       DateTime? @map("locked_at") @db.Timestamptz(6)
+  lockedBy       String?   @map("locked_by")
+  lastError      String?   @map("last_error")
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs         JobRun[]
+
+  @@index([status, runAt])
+  @@index([organizationId, createdAt])
+  @@map("automation_jobs")
+}
+
+model JobRun {
+  id         String       @id @default(uuid()) @db.Uuid
+  jobId      String       @map("job_id") @db.Uuid
+  attempt    Int
+  status     JobRunStatus @default(RUNNING)
+  startedAt  DateTime     @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt DateTime?    @map("finished_at") @db.Timestamptz(6)
+  error      String?
+  output     Json?
+
+  job AutomationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, startedAt])
+  @@map("job_runs")
+}
+
+model AnalyticsEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  webinarId      String   @map("webinar_id") @db.Uuid
+  type           String
+  source         String?
+  registrationId String?  @map("registration_id") @db.Uuid
+  anonymousId    String?  @map("anonymous_id")
+  device         String?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webinar      Webinar      @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@index([webinarId, organizationId, type, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("analytics_events")
+}
+
+/// Security-relevant actions. Platform-level entries have no organization.
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  actorEmail     String?  @map("actor_email")
+  action         String
+  targetType     String?  @map("target_type")
+  targetId       String?  @map("target_id")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actor        User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+/// Fixed-window rate-limit counters shared by every server instance. Keys are hashed.
+model RateLimit {
+  key         String   @id
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  count       Int      @default(0)
+
+  @@index([windowStart])
+  @@map("rate_limits")
+}

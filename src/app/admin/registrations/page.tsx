@@ -1,13 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminRegistrations } from "@/server/admin/data";
 
-const registrations = [
+export const dynamic = "force-dynamic";
+
+const demoRegistrations = [
   { webinar: "Scaling a Creator Business Without Burnout", email: "amber@northstarstudio.co", status: "confirmed", seat: "VIP" },
   { webinar: "Private Growth Lab", email: "julia@elevatehq.io", status: "waitlist", seat: "General" },
   { webinar: "Product Demo: Launch Workflow Masterclass", email: "leo@mentorloop.ai", status: "confirmed", seat: "Pro" },
 ];
 
-export default function AdminRegistrationsPage() {
+export default async function AdminRegistrationsPage() {
+  const registrations = await adminRegistrations(demoRegistrations);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -15,7 +19,7 @@ export default function AdminRegistrationsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Registrations</h2>
           <p className="text-sm text-secondaryText">Cross-workspace attendance and issue review</p>
         </div>
-        <Badge label="3 recent" tone="info" />
+        <Badge label={`${registrations.length} recent`} tone="info" />
       </div>
 
       <div className="overflow-x-auto">

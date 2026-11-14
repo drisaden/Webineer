@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformWebinars } from "@/data/mock/admin";
+import { adminWebinars } from "@/server/admin/data";
 
-export default function AdminWebinarsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminWebinarsPage() {
+  const platformWebinars = await adminWebinars();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -10,7 +13,7 @@ export default function AdminWebinarsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Webinars</h2>
           <p className="text-sm text-secondaryText">Platform-wide publish and moderation status</p>
         </div>
-        <Badge label="3 monitored" tone="info" />
+        <Badge label={`${platformWebinars.length} monitored`} tone="info" />
       </div>
 
       <div className="overflow-x-auto">

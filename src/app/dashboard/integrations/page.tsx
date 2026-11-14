@@ -3,8 +3,11 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { getIntegrationStatuses } from "@/server/workspace-pages";
 
-const connectors = [
+export const dynamic = "force-dynamic";
+
+const demoConnectors = [
   { category: "Video", name: "YouTube / Vimeo", status: "Connected", description: "External video-first webinar sources remain modular and provider-specific." },
   { category: "Email", name: "Development email log", status: "Active", description: "All outgoing notifications are queued in a local log unless SMTP or a transactional provider is configured." },
   { category: "Payments", name: "Paystack + Flutterwave", status: "Test mode", description: "Ready for secure verification and webhook processing with no live keys required." },
@@ -12,7 +15,8 @@ const connectors = [
   { category: "Webhooks", name: "Outgoing dispatch", status: "Protected", description: "Signed payloads, retry handling, and private-IP protection remain in place." },
 ];
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  const connectors = await getIntegrationStatuses(demoConnectors);
   return (
     <DashboardShell title="Integrations">
       <div className="space-y-6">

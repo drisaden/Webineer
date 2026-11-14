@@ -1,8 +1,8 @@
-import type { AnalyticsEvent, AnalyticsEventType, AnalyticsSummary } from "@/types";
+import type { AnalyticsEvent, AnalyticsEventType, AnalyticsSummary, RegistrationAnalyticsSummary, RegistrationSource } from "@/types";
 import { mockAnalytics, mockRegistrations, mockWebinars } from "@/data/mock/webinars";
 import { getPaymentTransactions } from "@/providers/payment";
 
-const inMemoryEvents: AnalyticsEvent[] = [
+const seedEvents: AnalyticsEvent[] = [
   {
     id: "evt_001",
     workspaceId: "ws_001",
@@ -48,6 +48,12 @@ const inMemoryEvents: AnalyticsEvent[] = [
   },
 ];
 
+// Shared across the server process (route handlers + server components).
+const analyticsGlobal = globalThis as typeof globalThis & { __webineerAnalyticsEvents?: AnalyticsEvent[] };
+const inMemoryEvents: AnalyticsEvent[] = (analyticsGlobal.__webineerAnalyticsEvents ??= [...seedEvents]);
+
+const REGISTRATION_SOURCES: RegistrationSource[] = ["hosted", "inline", "popup", "button", "direct"];
+
 export interface MetricAttribution {
   name: string;
   value: string | number;
@@ -63,6 +69,44 @@ export class AnalyticsService {
     };
     inMemoryEvents.unshift(record);
     return record;
+  }
+
+  listEvents(webinarId: string, types?: AnalyticsEventType[]): AnalyticsEvent[] {
+    return inMemoryEvents.filter((e) => e.webinarId === webinarId && (!types || types.includes(e.eventType)));
+  }
+
+  /**
+   * Registration funnel for one webinar, measured from events recorded by the
+   * shared registration backend. Every publishing method reports into the same
+   * event stream with its `source`, so there is one attendee database.
+   */
+  getRegistrationFunnel(webinarId: string): RegistrationAnalyticsSummary {
+    const events = this.listEvents(webinarId, ["landing_page_viewed", "registration_started", "registration_completed"]);
+    const bySource = Object.fromEntries(
+      REGISTRATION_SOURCES.map((s) => [s, { views: 0, registrations: 0 }]),
+    ) as RegistrationAnalyticsSummary["bySource"];
+    let pageViews = 0;
+    let submissions = 0;
+    let successfulRegistrations = 0;
+    for (const event of events) {
+      const source = (REGISTRATION_SOURCES as string[]).includes(event.source ?? "") ? (event.source as RegistrationSource) : "direct";
+      if (event.eventType === "landing_page_viewed") {
+        pageViews += 1;
+        bySource[source].views += 1;
+      } else if (event.eventType === "registration_started") {
+        submissions += 1;
+      } else if (event.eventType === "registration_completed") {
+        successfulRegistrations += 1;
+        bySource[source].registrations += 1;
+      }
+    }
+    return {
+      pageViews,
+      submissions,
+      successfulRegistrations,
+      conversionRate: pageViews > 0 ? Math.round((successfulRegistrations / pageViews) * 1000) / 10 : null,
+      bySource,
+    };
   }
 
   getSummary(dateRange: "7d" | "30d" | "90d" | "year" = "30d"): AnalyticsSummary {

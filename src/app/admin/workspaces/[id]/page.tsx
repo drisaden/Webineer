@@ -1,9 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformWorkspaces } from "@/data/mock/admin";
+import { adminWorkspace } from "@/server/admin/data";
 
-export default function AdminWorkspaceDetailPage({ params }: { params: { id: string } }) {
-  const workspace = platformWorkspaces.find((entry) => entry.id === params.id) ?? platformWorkspaces[0];
+export const dynamic = "force-dynamic";
+
+export default async function AdminWorkspaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const workspace = await adminWorkspace(id);
 
   return (
     <div className="space-y-6">
@@ -44,12 +47,11 @@ export default function AdminWorkspaceDetailPage({ params }: { params: { id: str
         </Card>
 
         <Card className="p-5">
-          <h3 className="text-lg font-semibold text-primaryText">Recent activity</h3>
+          <h3 className="text-lg font-semibold text-primaryText">Record</h3>
           <div className="mt-4 space-y-2 text-sm text-secondaryText">
-            <p>• Last webinar published: 2 days ago</p>
-            <p>• Last email campaign: 6 hours ago</p>
-            <p>• Last payment: completed</p>
-            <p>• Last admin note: Workspace reviewed</p>
+            <p>• Created: {workspace.created}</p>
+            <p>• Status: {workspace.status}</p>
+            <p>• Webinar quota used: {workspace.usage}</p>
           </div>
         </Card>
       </div>

@@ -1,13 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminSubscriptions } from "@/server/admin/data";
 
-const subscriptions = [
+export const dynamic = "force-dynamic";
+
+const demoSubscriptions = [
   { customer: "Northstar Studio", workspace: "Northstar Studio", plan: "Business", status: "active", billing: "Monthly", renewal: "2026-12-01" },
   { customer: "MentorLoop AI", workspace: "MentorLoop AI", plan: "Enterprise", status: "trial", billing: "Annual", renewal: "2026-11-30" },
   { customer: "LaunchRoom", workspace: "LaunchRoom", plan: "Starter", status: "paused", billing: "Monthly", renewal: "2026-12-15" },
 ];
 
-export default function AdminSubscriptionsPage() {
+export default async function AdminSubscriptionsPage() {
+  const subscriptions = await adminSubscriptions(demoSubscriptions);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -15,7 +19,7 @@ export default function AdminSubscriptionsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Subscriptions</h2>
           <p className="text-sm text-secondaryText">Platform subscription lifecycle and plan state</p>
         </div>
-        <Badge label="3 active" tone="success" />
+        <Badge label={`${subscriptions.length} active`} tone="success" />
       </div>
 
       <div className="overflow-x-auto">

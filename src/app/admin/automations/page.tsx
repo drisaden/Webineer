@@ -1,13 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminAutomations } from "@/server/admin/data";
 
-const automations = [
+export const dynamic = "force-dynamic";
+
+const demoAutomations = [
   { name: "Welcome sequence", trigger: "New registration", status: "active" },
   { name: "24-hour reminder", trigger: "Scheduled webinar", status: "active" },
   { name: "Failed payment follow-up", trigger: "Transaction state", status: "paused" },
 ];
 
-export default function AdminAutomationsPage() {
+export default async function AdminAutomationsPage() {
+  const automations = await adminAutomations(demoAutomations);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -15,7 +19,7 @@ export default function AdminAutomationsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Automations</h2>
           <p className="text-sm text-secondaryText">Workflow health and operational state</p>
         </div>
-        <Badge label="2 active" tone="success" />
+        <Badge label={`${automations.length} active`} tone="success" />
       </div>
 
       <div className="divide-y divide-border">

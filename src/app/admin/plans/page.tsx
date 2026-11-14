@@ -1,14 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminPlans } from "@/server/admin/data";
 
-const plans = [
+export const dynamic = "force-dynamic";
+
+const demoPlans = [
   { name: "Free", price: "NGN 0", status: "active" },
   { name: "Starter", price: "NGN 12,500", status: "active" },
   { name: "Professional", price: "NGN 35,000", status: "active" },
   { name: "Business", price: "NGN 90,000", status: "active" },
 ];
 
-export default function AdminPlansPage() {
+export default async function AdminPlansPage() {
+  const plans = await adminPlans(demoPlans);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -16,7 +20,7 @@ export default function AdminPlansPage() {
           <h2 className="text-lg font-semibold text-primaryText">Plans & Entitlements</h2>
           <p className="text-sm text-secondaryText">Configured Webineer SaaS plans and customer offering limits</p>
         </div>
-        <Badge label="4 plans" tone="info" />
+        <Badge label={`${plans.length} plans`} tone="info" />
       </div>
 
       <div className="divide-y divide-border">

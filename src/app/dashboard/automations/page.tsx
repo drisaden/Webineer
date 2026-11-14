@@ -4,9 +4,14 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { initialWorkflows } from "@/services/automation-engine";
+import { redirect } from "next/navigation";
+import { getAutomationOverview } from "@/server/jobs/overview";
 
-export default function AutomationsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AutomationsPage() {
+  const data = await getAutomationOverview();
+  if (!data) redirect("/login?next=/dashboard/automations");
   return (
     <DashboardShell title="Automation Studio">
       <div className="space-y-6">
@@ -23,14 +28,15 @@ export default function AutomationsPage() {
         </div>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Enabled</span><PlayCircle className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{initialWorkflows.filter((flow) => flow.enabled).length}</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Runs today</span><Workflow className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">224</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Pending queue</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">19</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Enabled</span><PlayCircle className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.enabled}</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Runs today</span><Workflow className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.runsToday}</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Pending queue</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.pending}</p>{data.failed > 0 && <p className="mt-1 text-xs text-[#B87514]">{data.failed} failed</p>}</Card>
         </section>
 
         <Card>
           <CardContent className="space-y-5">
-            {initialWorkflows.map((workflow) => (
+            {data.workflows.length === 0 && <p className="text-sm text-secondaryText">Publish a webinar with reminders or follow-ups to see its automation here.</p>}
+            {data.workflows.map((workflow) => (
               <div key={workflow.id} className="rounded-2xl border border-border p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
@@ -45,8 +51,8 @@ export default function AutomationsPage() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {workflow.steps.map((step, index) => (
-                    <span key={step.id} className="inline-flex items-center gap-2 rounded-full border border-border bg-[#F7F9FC] px-2.5 py-1 text-xs font-medium text-secondaryText">
-                      {index + 1}. {step.type === "action" ? step.actionType : step.type}
+                    <span key={`${step}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-[#F7F9FC] px-2.5 py-1 text-xs font-medium text-secondaryText">
+                      {index + 1}. {step}
                     </span>
                   ))}
                 </div>

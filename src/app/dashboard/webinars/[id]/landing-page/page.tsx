@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { LandingPageBuilder } from "@/components/landing-page/landing-page-builder";
-import { mockWebinarRepository } from "@/services/mock-webinar-repository";
+import { getStore } from "@/server/repositories";
+import { getCurrentUser } from "@/lib/auth/demo-session";
 
 export default async function WebinarLandingPage({
   params,
@@ -9,9 +10,10 @@ export default async function WebinarLandingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const webinar = mockWebinarRepository.getById(id);
+  const [user, webinar] = await Promise.all([getCurrentUser(), getStore().getWebinar(id)]);
 
-  if (!webinar) {
+  // Tenant isolation: another workspace's webinar is indistinguishable from a missing one.
+  if (!webinar || !user || webinar.workspaceId !== user.workspaceId) {
     notFound();
   }
 

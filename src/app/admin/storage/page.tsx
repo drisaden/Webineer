@@ -1,14 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminStorage } from "@/server/admin/data";
 
-const storage = [
+export const dynamic = "force-dynamic";
+
+const demoStorage = [
   { name: "Storage provider", value: "S3-compatible object storage" },
   { name: "Objects stored", value: "48.2k" },
   { name: "Used capacity", value: "1.28 TB" },
   { name: "Failed uploads", value: "8" },
 ];
 
-export default function AdminStoragePage() {
+export default async function AdminStoragePage() {
+  const storage = await adminStorage(demoStorage);
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {storage.map((entry) => (

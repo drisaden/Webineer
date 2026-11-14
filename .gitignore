@@ -6,4 +6,9 @@ npm-debug.log*
 .DS_Store
 .env
 .env.local
+.env.production.example
 .env.*.local
+.webineer-data
+/src/generated/prisma
+*.log
+*.tsbuildinfo

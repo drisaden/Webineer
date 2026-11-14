@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformTransactions } from "@/data/mock/admin";
+import { adminTransactions } from "@/server/admin/data";
 
-export default function AdminTransactionsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminTransactionsPage() {
+  const platformTransactions = await adminTransactions();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">

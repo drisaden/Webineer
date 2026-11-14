@@ -1,14 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminEmailStatus } from "@/server/admin/data";
 
-const emailStatus = [
+export const dynamic = "force-dynamic";
+
+const demoEmailStatus = [
   { name: "SMTP provider", status: "Healthy" },
   { name: "Delivery queue", status: "Running" },
   { name: "Failed messages", status: "2" },
   { name: "Suppressed recipients", status: "14" },
 ];
 
-export default function AdminEmailPage() {
+export default async function AdminEmailPage() {
+  const emailStatus = await adminEmailStatus(demoEmailStatus);
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {emailStatus.map((item) => (

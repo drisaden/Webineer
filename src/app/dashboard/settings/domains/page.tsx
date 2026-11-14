@@ -3,10 +3,13 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { customDomainService } from "@/services/custom-domain-service";
+import { getWorkspaceDomains } from "@/server/workspace-pages";
 
-const domains = customDomainService.listDomains();
+export const dynamic = "force-dynamic";
 
-export default function DomainsSettingsPage() {
+
+export default async function DomainsSettingsPage() {
+  const { rows: domains, unavailable } = await getWorkspaceDomains(customDomainService.listDomains());
   return (
     <DashboardShell title="Custom Domains & Branding">
       <div className="space-y-6">
@@ -19,6 +22,7 @@ export default function DomainsSettingsPage() {
         <Card>
           <CardContent className="space-y-4">
             <h3 className="text-lg font-semibold">Domain verification flow</h3>
+            {unavailable && <p className="text-sm text-secondaryText">Custom domains aren&apos;t available yet. Your registration pages, embeds and webinar rooms are served from the main Webineer domain.</p>}
             {domains.map((domain) => (
               <div key={domain.id} className="rounded-2xl border border-border p-4">
                 <div className="flex items-center justify-between">

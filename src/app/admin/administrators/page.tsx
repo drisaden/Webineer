@@ -1,13 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { adminAdministrators } from "@/server/admin/data";
 
-const admins = [
+export const dynamic = "force-dynamic";
+
+const demoAdmins = [
   { name: "Alyssa Jordan", role: "Super Admin", email: "alyssa@webineer.app", status: "active" },
   { name: "Nathan Obi", role: "Platform Admin", email: "nathan@webineer.app", status: "active" },
   { name: "Fola Adeyemi", role: "Technical Admin", email: "fola@webineer.app", status: "review" },
 ];
 
-export default function AdminAdministratorsPage() {
+export default async function AdminAdministratorsPage() {
+  const admins = await adminAdministrators(demoAdmins);
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -15,7 +19,7 @@ export default function AdminAdministratorsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Administrators</h2>
           <p className="text-sm text-secondaryText">Platform staff and access control</p>
         </div>
-        <Badge label="3 accounts" tone="info" />
+        <Badge label={`${admins.length} accounts`} tone="info" />
       </div>
 
       <div className="divide-y divide-border">

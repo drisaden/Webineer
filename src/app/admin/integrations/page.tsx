@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformIntegrations } from "@/data/mock/admin";
+import { adminIntegrations } from "@/server/admin/data";
 
-export default function AdminIntegrationsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminIntegrationsPage() {
+  const platformIntegrations = await adminIntegrations();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -10,7 +13,7 @@ export default function AdminIntegrationsPage() {
           <h2 className="text-lg font-semibold text-primaryText">Integrations</h2>
           <p className="text-sm text-secondaryText">Provider configuration and health status</p>
         </div>
-        <Badge label="5 providers" tone="info" />
+        <Badge label={`${platformIntegrations.length} providers`} tone="info" />
       </div>
 
       <div className="overflow-x-auto">

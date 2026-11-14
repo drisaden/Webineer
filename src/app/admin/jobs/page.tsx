@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { jobQueue } from "@/data/mock/admin";
+import { adminJobs } from "@/server/admin/data";
 
-export default function AdminJobsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminJobsPage() {
+  const jobQueue = await adminJobs();
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">

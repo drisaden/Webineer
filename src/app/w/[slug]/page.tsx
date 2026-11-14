@@ -1,19 +1,48 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { getEmbedUrl } from "@/providers/video";
-import { mockWebinarRepository } from "@/services/mock-webinar-repository";
+import { getStore } from "@/server/repositories";
+import { getCurrentUser, canManageWebinar } from "@/lib/auth/demo-session";
+import { publicViewFor } from "@/services/registration-service";
+import { ConfiguredRegistrationPage } from "@/components/registration/configured-registration-page";
+
+export const dynamic = "force-dynamic";
+
+async function canPreview(webinar: { workspaceId: string }) {
+  const user = await getCurrentUser();
+  return Boolean(user && canManageWebinar(user, webinar));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const webinar = await getStore().getWebinarBySlug(slug);
+  if (!webinar) return {};
+  const title = webinar.workflow ? webinar.workflow.registration.pageTitle || webinar.title : webinar.title;
+  return { title: `${title} · Register`, description: webinar.description, robots: webinar.status === "draft" ? { index: false } : undefined };
+}
 
 export default async function WebinarRegistrationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string; source?: string }>;
 }) {
   const { slug } = await params;
-  const webinar = mockWebinarRepository.getBySlug(slug);
+  const query = await searchParams;
+  const webinar = await getStore().getWebinarBySlug(slug);
 
   if (!webinar) {
     notFound();
+  }
+
+  if (webinar.workflow) {
+    const isDraft = webinar.status === "draft";
+    // Drafts are only visible to people who can manage the webinar, as a preview.
+    if (isDraft && !(query.preview === "1" && (await canPreview(webinar)))) notFound();
+    return <ConfiguredRegistrationPage view={await publicViewFor(webinar)} preview={isDraft} source={query.source === "button" ? "button" : "hosted"} />;
   }
 
   const embedUrl = getEmbedUrl(webinar.videoSource.provider, webinar.videoSource.url);

@@ -1,9 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { platformTransactions } from "@/data/mock/admin";
+import { adminTransaction } from "@/server/admin/data";
 
-export default function AdminTransactionDetailPage({ params }: { params: { id: string } }) {
-  const txn = platformTransactions.find((entry) => entry.id === params.id) ?? platformTransactions[0];
+export const dynamic = "force-dynamic";
+
+export default async function AdminTransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { txn, failureReason, events } = await adminTransaction(id);
 
   return (
     <div className="space-y-6">
@@ -36,8 +39,8 @@ export default function AdminTransactionDetailPage({ params }: { params: { id: s
         <h3 className="text-lg font-semibold text-primaryText">Verification audit</h3>
         <div className="mt-4 space-y-2 text-sm text-secondaryText">
           <p>• Payment status: {txn.status}</p>
-          <p>• Provider verification: confirmed by signed webhook</p>
-          <p>• Reconciliation: reviewed by admin team</p>
+          {failureReason && <p>• Reason: {failureReason}</p>}
+          {events.length > 0 ? events.map((e, i) => <p key={i}>• {e.type} · {new Date(e.at).toLocaleString()}</p>) : <p>• Verified server-side with the provider before any access is granted.</p>}
           <p>• Sensitive financial tokens remain masked and are never exposed to the browser.</p>
         </div>
       </Card>

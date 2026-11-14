@@ -4,7 +4,10 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { analyticsService } from "@/services/analytics-service";
+import { redirect } from "next/navigation";
+import { getAnalyticsSummary } from "@/server/workspace-pages";
+
+export const dynamic = "force-dynamic";
 
 const views = [
   { href: "/dashboard/analytics/webinars", label: "Webinar analytics", icon: BarChart3 },
@@ -12,15 +15,16 @@ const views = [
   { href: "/dashboard/analytics/revenue", label: "Revenue reporting", icon: CircleDollarSign },
 ];
 
-export default function AnalyticsPage() {
-  const summary = analyticsService.getSummary("30d");
+export default async function AnalyticsPage() {
+  const summary = await getAnalyticsSummary();
+  if (!summary) redirect("/login?next=/dashboard/analytics");
 
   return (
     <DashboardShell title="Analytics">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-secondaryText">Measured from real registration and payment events in the mock workspace.</p>
+            <p className="text-sm text-secondaryText">{summary.note}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge label="Last 30 days" tone="info" />
@@ -34,7 +38,7 @@ export default function AnalyticsPage() {
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Total webinars</span><BarChart3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{summary.totalWebinars}</p><p className="mt-2 text-xs text-secondaryText">{summary.publishedWebinars} published</p></Card>
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Registrations</span><Users className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{summary.totalRegistrations}</p><p className="mt-2 text-xs text-secondaryText">{summary.conversionRate}% conversion</p></Card>
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Attendees</span><Filter className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{summary.totalAttendees}</p><p className="mt-2 text-xs text-secondaryText">{summary.averageAttendanceRate}% attendance</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Revenue</span><CircleDollarSign className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">₦{summary.revenue.toLocaleString()}</p><p className="mt-2 text-xs text-secondaryText">{summary.currency} tracked</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Revenue</span><CircleDollarSign className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{summary.revenueLabel}</p><p className="mt-2 text-xs text-secondaryText">{summary.currencyNote}</p></Card>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">

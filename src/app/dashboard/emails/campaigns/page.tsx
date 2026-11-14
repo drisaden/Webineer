@@ -1,19 +1,25 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { isDemoMode } from "@/server/workspace-pages";
 
-const campaigns = [
+export const dynamic = "force-dynamic";
+
+const demoCampaigns = [
   { id: "camp_001", name: "Launch reminder sequence", audience: "Registered attendees", scheduled: "2026-11-18 17:00", status: "Scheduled", recipients: 368 },
   { id: "camp_002", name: "Replay and conversion follow-up", audience: "Missed webinar viewers", scheduled: "2026-11-12 09:00", status: "Running", recipients: 182 },
   { id: "camp_003", name: "VIP upsell sequence", audience: "Ticket buyers", scheduled: "2026-11-09 07:00", status: "Sent", recipients: 96 },
 ];
 
 export default function EmailCampaignsDetailPage() {
+  const demo = isDemoMode();
+  const campaigns = demo ? demoCampaigns : [];
   return (
     <DashboardShell title="Email Campaigns">
       <div className="space-y-6">
         <Card>
           <CardContent className="space-y-4">
+            {!demo && <p className="text-sm text-secondaryText">One-off campaigns aren&apos;t available yet. Each webinar&apos;s confirmation, reminder and follow-up emails are configured in its Notifications section.</p>}
             {campaigns.map((campaign) => (
               <div key={campaign.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between">
                 <div>
