@@ -3,6 +3,7 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowRight, CalendarClock, ChevronRight, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { DashboardOverviewData } from "@/server/dashboard-data";
 
+const noopSubscribe = () => () => {};
+function localGreeting() {
+  const hour = new Date().getHours();
+  return `Good ${hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"}, welcome back.`;
+}
+
 export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
   const { stats, chartData, activities, upcoming } = data;
+  // Time of day comes from the viewer's own clock; the server renders a neutral greeting.
+  const greeting = useSyncExternalStore(noopSubscribe, localGreeting, () => "Welcome back.");
   return (
     <DashboardShell title="Dashboard">
       <div className="space-y-6">
         <section className="flex flex-col gap-4 rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(4,27,94,0.96),rgba(9,35,86,0.9))] p-6 text-white shadow-[0_22px_50px_rgba(4,27,94,0.18)] md:flex-row md:items-center md:justify-between backdrop-blur-xl">
           <div>
-            <p className="text-sm text-white/70">Good evening, welcome back.</p>
+            <p className="text-sm text-white/70">{greeting}</p>
             <h2 className="mt-2 text-2xl">{data.viewer.name}</h2>
             <p className="mt-1 text-sm text-white/70">{data.viewer.subtitle}</p>
           </div>

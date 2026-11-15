@@ -25,7 +25,11 @@ export async function GET(request: Request) {
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-  if (error || !data.user) redirect("/login?error=link_invalid");
+  if (error || !data.user) {
+    // Log why (never the token): tells an expired/already-used link apart from a configuration problem.
+    console.warn("[auth] link verification failed", type, error?.code ?? "no_user", error?.message ?? "");
+    redirect("/login?error=link_invalid");
+  }
 
   try {
     const db = getPrisma();

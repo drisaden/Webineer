@@ -87,7 +87,26 @@ export async function signInAction(_prev: AuthFormState, formData: FormData): Pr
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) {
     if (error?.code === "email_not_confirmed") {
-      return { status: "error", message: "Please confirm your email address first. We've sent you a confirmation link.", email: parsed.data.email };
+      // The password was right but the address is unconfirmed. Earlier links may have expired, so send a
+      // fresh one (bounded) instead of only claiming that one was sent.
+      let resent = false;
+      if ((await checkRateLimit(`resend-confirm:${parsed.data.email}`, 3, 15 * 60_000)).allowed) {
+        const origin = await originFromHeaders();
+        const { error: resendError } = await supabase.auth.resend({
+          type: "signup",
+          email: parsed.data.email,
+          options: { emailRedirectTo: `${origin}/auth/confirm?next=/dashboard` },
+        });
+        if (resendError) console.error("[auth] resend confirmation failed", resendError.code, resendError.message);
+        resent = !resendError;
+      }
+      return {
+        status: "error",
+        message: resent
+          ? "Please confirm your email address first. We've just sent you a new confirmation link. Use the most recent email; older links no longer work."
+          : "Please confirm your email address first, using the most recent confirmation email we sent you.",
+        email: parsed.data.email,
+      };
     }
     await audit("auth.sign_in_failed", { email: parsed.data.email });
     return { status: "error", message: "Incorrect email or password.", email: parsed.data.email };

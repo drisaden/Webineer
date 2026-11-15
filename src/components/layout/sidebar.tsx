@@ -25,6 +25,11 @@ const nav = [
   { label: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ];
 
+// The demo notice is only true for the local demo (no Supabase configured). Never show it on a real workspace.
+const DEMO_WORKSPACE =
+  process.env.NEXT_PUBLIC_DEMO_MODE === "true" &&
+  !(process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY));
+
 export function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
@@ -58,13 +63,15 @@ export function Sidebar({ mobile = false }: { mobile?: boolean }) {
         </div>
       </div>
 
-      <div className="mt-auto rounded-[1.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <Wand2 className="h-4 w-4 text-[#0AEBCB]" />
-          Demo workspace
+      {DEMO_WORKSPACE ? (
+        <div className="mt-auto rounded-[1.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Wand2 className="h-4 w-4 text-[#0AEBCB]" />
+            Demo workspace
+          </div>
+          <p className="text-xs text-white/70">Frontend-only authentication and mock data are enabled for local development.</p>
         </div>
-        <p className="text-xs text-white/70">Frontend-only authentication and mock data are enabled for local development.</p>
-      </div>
+      ) : null}
     </aside>
   );
 }
