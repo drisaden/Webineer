@@ -70,6 +70,8 @@ export function WebinarWorkflow({
   const [saved, setSaved] = useState<WorkflowSectionData>(() => pickSections(initialPayload?.config ?? initialConfig));
   const [active, setActive] = useState<WorkflowSectionKey>(initialSection);
   const [revealed, setRevealed] = useState<Set<WorkflowSectionKey>>(() => new Set(initialPayload ? DATA_SECTION_KEYS : []));
+  // Sections the owner has worked through in this session (Next / Save draft); saved with the webinar.
+  const [reviewed, setReviewed] = useState<WorkflowDataSectionKey[]>([]);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export function WebinarWorkflow({
   const savedRef = useRef(saved);
   const metaRef = useRef(meta);
   const configRef = useRef(config);
+  const reviewedRef = useRef(reviewed);
   useLayoutEffect(() => {
     draftRef.current = draft;
     savedRef.current = saved;
@@ -98,8 +101,8 @@ export function WebinarWorkflow({
   const isDirty = dirtySections.length > 0;
 
   const evaluation = useMemo(
-    () => evaluateWorkflow({ ...config, ...draft }, { published: meta ? meta.status !== "draft" : false, dirtySections }),
-    [config, draft, meta, dirtySections],
+    () => evaluateWorkflow({ ...config, ...draft }, { published: meta ? meta.status !== "draft" : false, dirtySections, reviewedSections: reviewed }),
+    [config, draft, meta, dirtySections, reviewed],
   );
 
   const states = useMemo(() => {
@@ -135,7 +138,10 @@ export function WebinarWorkflow({
     const currentDraft = draftRef.current;
     const dirty = DATA_SECTION_KEYS.filter((key) => !same(currentDraft[key], savedRef.current[key]));
     const webinar = metaRef.current;
-    if (webinar && dirty.length === 0) return true;
+    // Edited sections and sections the owner continued past count as worked through.
+    const alreadyReviewed = configRef.current.reviewedSections ?? [];
+    const newlyReviewed = DATA_SECTION_KEYS.filter((key) => (reviewedRef.current.includes(key) || dirty.includes(key)) && !alreadyReviewed.includes(key));
+    if (webinar && dirty.length === 0 && newlyReviewed.length === 0) return true;
 
     const sections: Partial<WorkflowSectionData> = {};
     for (const key of webinar ? dirty : DATA_SECTION_KEYS) {
@@ -146,7 +152,11 @@ export function WebinarWorkflow({
       const response = await fetch(webinar ? `/api/webinars/${webinar.id}` : "/api/webinars", {
         method: webinar ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(webinar ? { sections, baseVersion: configRef.current.version } : { sections }),
+        body: JSON.stringify({
+          sections,
+          ...(webinar ? { baseVersion: configRef.current.version } : {}),
+          ...(newlyReviewed.length ? { reviewed: newlyReviewed } : {}),
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -217,18 +227,33 @@ export function WebinarWorkflow({
     setDraft((current) => ({ ...current, [key]: value }));
   }, []);
 
+  /** Record that the owner has finished with a section (Next or Save draft). */
+  const markReviewed = useCallback((key: WorkflowSectionKey) => {
+    if (key === "finish" || reviewedRef.current.includes(key)) return;
+    const next = [...reviewedRef.current, key];
+    reviewedRef.current = next;
+    setReviewed(next);
+  }, []);
+
   const goTo = useCallback(
-    (key: WorkflowSectionKey) => {
+    (key: WorkflowSectionKey, options?: { done?: boolean }) => {
+      if (options?.done) markReviewed(active);
       setRevealed((current) => new Set(current).add(active));
       setActive(key);
       const params = new URLSearchParams(window.location.search);
       params.set("section", key);
       window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
       document.getElementById("workflow-content")?.scrollIntoView({ block: "start", behavior: "smooth" });
-      if (meta && isDirty) void save();
+      if (meta && (isDirty || options?.done)) void save();
     },
-    [active, isDirty, meta, save],
+    [active, isDirty, markReviewed, meta, save],
   );
+
+  const saveDraft = useCallback(() => {
+    markReviewed(active);
+    void save();
+  }, [active, markReviewed, save]);
+  const activeReviewed = active === "finish" || reviewed.includes(active) || (config.reviewedSections ?? []).includes(active);
 
   const publish = useCallback(async () => {
     setPublishError(null);
@@ -289,7 +314,7 @@ export function WebinarWorkflow({
           <SaveIndicator state={saveState} dirty={isDirty} hasWebinar={Boolean(meta)} titleReady={draft.configuration.title.trim().length >= 3} onRetry={() => void save()} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={() => void save()} disabled={saveState.status === "saving" || (Boolean(meta) && !isDirty)}>
+          <Button type="button" variant="secondary" size="sm" onClick={saveDraft} disabled={saveState.status === "saving" || (Boolean(meta) && !isDirty && activeReviewed)}>
             {saveState.status === "saving" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Save draft
           </Button>
@@ -354,7 +379,7 @@ export function WebinarWorkflow({
             <span className="sm:hidden">Previous</span>
           </Button>
           {index < WORKFLOW_SECTIONS.length - 1 && (
-            <Button type="button" onClick={() => goTo(WORKFLOW_SECTIONS[index + 1].key)}>
+            <Button type="button" onClick={() => goTo(WORKFLOW_SECTIONS[index + 1].key, { done: true })}>
               <span className="hidden sm:inline">{WORKFLOW_SECTIONS[index + 1].label}</span>
               <span className="sm:hidden">Next</span>
               <ArrowRight className="ml-2 h-4 w-4" />

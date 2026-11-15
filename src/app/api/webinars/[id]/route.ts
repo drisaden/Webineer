@@ -33,7 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: "Some settings are invalid.", issues: parsed.error.flatten() }, { status: 400 });
   }
   try {
-    const webinar = await updateSections(user, id, parsed.data.sections, parsed.data.baseVersion);
+    const webinar = await updateSections(user, id, parsed.data.sections, parsed.data.baseVersion, parsed.data.reviewed);
     return Response.json(await toWorkflowPayload(webinar));
   } catch (error) {
     return handleWorkflowError(error);

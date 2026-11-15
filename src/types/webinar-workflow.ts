@@ -232,6 +232,12 @@ export interface WebinarWorkflowConfig {
   /** Config version at which each section was last changed (conflict detection). */
   sectionVersions?: Partial<Record<WorkflowDataSectionKey, number>>;
   publishedAt?: string;
+  /**
+   * Sections the owner has worked through: edited, or continued past with Next / Save draft.
+   * A section only shows as completed once it is valid AND listed here (or the webinar is published),
+   * so untouched sections with default settings are never ticked on a new draft.
+   */
+  reviewedSections?: WorkflowDataSectionKey[];
   configuration: ConfigurationSettings;
   schedules: SchedulesSettings;
   registration: RegistrationSettings;

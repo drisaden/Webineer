@@ -255,10 +255,11 @@ const checks: Record<WorkflowDataSectionKey, Check> = {
 
 export function evaluateWorkflow(
   config: WebinarWorkflowConfig,
-  options: { published?: boolean; dirtySections?: WorkflowSectionKey[]; now?: Date } = {},
+  options: { published?: boolean; dirtySections?: WorkflowSectionKey[]; reviewedSections?: WorkflowSectionKey[]; now?: Date } = {},
 ): WorkflowEvaluation {
   const ctx: Ctx = { now: options.now ?? new Date() };
   const dirty = new Set(options.dirtySections ?? []);
+  const reviewed = new Set<WorkflowSectionKey>([...(config.reviewedSections ?? []), ...(options.reviewedSections ?? [])]);
   const sections = {} as Record<WorkflowSectionKey, SectionEvaluation>;
   const blockingIssues: WorkflowIssue[] = [];
 
@@ -267,7 +268,10 @@ export function evaluateWorkflow(
     const hasErrors = issues.some((i) => i.severity === "error");
     const touched = sectionHasUserInput(config, key);
     let state: SectionEvaluation["state"];
-    if (complete && !dirty.has(key)) state = "completed";
+    // Valid defaults alone don't earn a tick: the owner must have worked through the section
+    // (or published the webinar, which confirms every setting shown on the review step).
+    const workedThrough = Boolean(options.published) || reviewed.has(key) || (!DEFAULT_VALID_SECTIONS.has(key) && touched);
+    if (complete && !dirty.has(key) && workedThrough) state = "completed";
     else if (hasErrors && (touched || REQUIRED[key])) state = touched ? "attention" : "incomplete";
     else state = "incomplete";
     sections[key] = { state, issues, required: REQUIRED[key] };
@@ -283,6 +287,9 @@ export function evaluateWorkflow(
 
   return { sections, canPublish, blockingIssues };
 }
+
+/** Sections whose default settings are already valid, so only an explicit review can complete them. */
+const DEFAULT_VALID_SECTIONS = new Set<WorkflowSectionKey>(["notifications", "thankYou", "live", "replay"]);
 
 /**
  * Whether the user has started filling a section. An untouched required section

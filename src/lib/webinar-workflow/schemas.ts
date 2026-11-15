@@ -207,6 +207,11 @@ export const sectionPatchSchema = z
     }),
     /** Optimistic concurrency: the version the client last loaded. */
     baseVersion: z.number().int().min(1),
+    /** Sections the owner has worked through (progress marker only; grants nothing). */
+    reviewed: z
+      .array(z.enum(["configuration", "schedules", "registration", "notifications", "integrations", "thankYou", "live", "replay"]))
+      .max(8)
+      .optional(),
   })
   .strict();
 

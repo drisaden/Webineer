@@ -201,11 +201,16 @@ export async function updateSections(
   id: string,
   sections: Partial<WorkflowSectionData>,
   baseVersion: number,
+  reviewed: WorkflowDataSectionKey[] = [],
 ): Promise<Webinar> {
   const webinar = await ensureWorkflow(user, await getOwnedWebinar(user, id));
   const current = webinar.workflow!;
   const keys = (Object.keys(sections) as WorkflowDataSectionKey[]).filter((k) => sections[k] !== undefined);
-  if (keys.length === 0) return webinar;
+  // Progress markers: sections the owner has worked through (never removed once set).
+  const reviewedBefore = current.reviewedSections ?? [];
+  const reviewedNow = DATA_SECTION_KEYS.filter((k) => reviewedBefore.includes(k) || reviewed.includes(k));
+  const reviewedChanged = reviewedNow.length !== reviewedBefore.length;
+  if (keys.length === 0 && !reviewedChanged) return webinar;
 
   const conflicts = keys.filter((k) => (current.sectionVersions?.[k] ?? 0) > baseVersion);
   if (conflicts.length > 0) {
@@ -217,6 +222,7 @@ export async function updateSections(
     ...current,
     version: nextVersion,
     sectionVersions: { ...current.sectionVersions },
+    reviewedSections: reviewedNow,
   };
   for (const key of keys) {
     (next as unknown as Record<string, unknown>)[key] = sections[key];

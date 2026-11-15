@@ -22,7 +22,8 @@ export async function POST(request: Request) {
   try {
     const draft = await createDraft(user);
     const sections = parsed.data.sections ?? {};
-    const webinar = Object.keys(sections).length ? await updateSections(user, draft.id, sections, draft.workflow!.version) : draft;
+    const reviewed = parsed.data.reviewed ?? [];
+    const webinar = Object.keys(sections).length || reviewed.length ? await updateSections(user, draft.id, sections, draft.workflow!.version, reviewed) : draft;
     return Response.json(await toWorkflowPayload(webinar), { status: 201 });
   } catch (error) {
     return handleWorkflowError(error);
