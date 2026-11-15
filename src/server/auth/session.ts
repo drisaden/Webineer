@@ -12,6 +12,12 @@ import { bootstrapSuperAdmin, getPlatformRole, listUserOrganizations, type Sessi
 
 export const ACTIVE_ORG_COOKIE = "webineer_org";
 
+const PLAN_KEYS = ["free", "starter", "professional", "business"] as const;
+export type SelectablePlan = (typeof PLAN_KEYS)[number];
+export function isPlanKey(value: unknown): value is SelectablePlan {
+  return typeof value === "string" && (PLAN_KEYS as readonly string[]).includes(value);
+}
+
 /** Verified identity from the Supabase session cookie, or null. */
 export async function getSessionUser(): Promise<SessionUser | null> {
   if (getAuthMode() !== "supabase") return null;
@@ -50,25 +56,30 @@ export async function syncUserProfile(db: Db, authUser: SupabaseAuthUser) {
   });
 
   await bootstrapSuperAdmin(db, { id: authUser.id, email, emailVerified: Boolean(verifiedAt) });
-  return { profile, workspaceName: typeof meta.workspace_name === "string" ? meta.workspace_name.slice(0, 80) : "" };
+  return {
+    profile,
+    workspaceName: typeof meta.workspace_name === "string" ? meta.workspace_name.slice(0, 80) : "",
+    // Display/onboarding hint only: decides whether the plan chooser is shown. It never grants a plan.
+    planPreselected: isPlanKey(meta.selected_plan),
+  };
 }
 
 /** Every signed-in user needs a workspace; the first one is created automatically. */
-export async function ensureDefaultOrganization(db: Db, user: SessionUser & { name: string }, preferredName?: string) {
+export async function ensureDefaultOrganization(db: Db, user: SessionUser & { name: string }, preferredName?: string, planPreselected = false) {
   const existing = await listUserOrganizations(db, user.id);
   if (existing.length > 0) return existing;
   // Only users who don't already belong to an organization get a new one, so invitees aren't duplicated.
   const anyMembership = await db.membership.count({ where: { userId: user.id } });
   if (anyMembership > 0) return existing;
   const name = preferredName?.trim() || (user.name ? `${user.name.split(" ")[0]}'s Workspace` : "My Workspace");
-  await createOrganizationWithOwner(db, user, { name });
+  await createOrganizationWithOwner(db, user, { name, planSelected: planPreselected });
   return listUserOrganizations(db, user.id);
 }
 
 export interface AppSession {
   session: SessionUser;
-  profile: { id: string; email: string; name: string; title: string | null; avatarUrl: string | null };
-  organization: { id: string; name: string; slug: string; plan: string };
+  profile: { id: string; email: string; name: string; title: string | null; avatarUrl: string | null; onboardingCompletedAt: Date | null };
+  organization: { id: string; name: string; slug: string; plan: string; planSelectedAt: Date | null };
   role: OrgRole;
   platformRole: Awaited<ReturnType<typeof getPlatformRole>>;
   organizations: { id: string; name: string; slug: string }[];
@@ -85,6 +96,7 @@ export async function getAppSession(): Promise<AppSession | null> {
 
   let profile = await db.user.findUnique({ where: { id: session.id } });
   let workspaceName = "";
+  let planPreselected = false;
   if (!profile) {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase.auth.getUser();
@@ -92,10 +104,11 @@ export async function getAppSession(): Promise<AppSession | null> {
     const synced = await syncUserProfile(db, data.user);
     profile = synced.profile;
     workspaceName = synced.workspaceName;
+    planPreselected = synced.planPreselected;
   }
   if (profile.status !== "ACTIVE") return null;
 
-  const memberships = await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName);
+  const memberships = await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, planPreselected);
   if (memberships.length === 0) return null;
 
   const cookieStore = await cookies();
@@ -104,7 +117,7 @@ export async function getAppSession(): Promise<AppSession | null> {
 
   return {
     session,
-    profile: { id: profile.id, email: profile.email, name: profile.name, title: profile.title, avatarUrl: profile.avatarUrl },
+    profile: { id: profile.id, email: profile.email, name: profile.name, title: profile.title, avatarUrl: profile.avatarUrl, onboardingCompletedAt: profile.onboardingCompletedAt },
     organization: active.organization,
     role: active.role,
     platformRole: await getPlatformRole(db, profile.id),

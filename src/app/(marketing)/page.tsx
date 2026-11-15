@@ -28,9 +28,9 @@ const useCases = [
 ];
 
 const plans = [
-  { name: "Starter", price: "$19", description: "For solo operators getting started with webinar funnels.", cta: "Try starter" },
-  { name: "Growth", price: "$49", description: "For teams scaling live launches and automated webinars.", cta: "Choose growth" },
-  { name: "Scale", price: "$99", description: "For larger marketing operations with advanced workflows.", cta: "Talk to sales" },
+  { key: "starter", name: "Starter", price: "$19", description: "For solo operators getting started with webinar funnels.", cta: "Try starter" },
+  { key: "professional", name: "Growth", price: "$49", description: "For teams scaling live launches and automated webinars.", cta: "Choose growth" },
+  { key: "business", name: "Scale", price: "$99", description: "For larger marketing operations with advanced workflows.", cta: "Talk to sales" },
 ];
 
 const faqs = [
@@ -202,7 +202,7 @@ export default function MarketingPage() {
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Audience insights</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Registration landing pages</li>
                 </ul>
-                <Button asChild className="mt-6 w-full" variant={idx === 1 ? "primary" : "secondary"}><Link href="/register">{plan.cta}</Link></Button>
+                <Button asChild className="mt-6 w-full" variant={idx === 1 ? "primary" : "secondary"}><Link href={`/register?plan=${plan.key}`}>{plan.cta}</Link></Button>
               </div>
             ))}
           </div>

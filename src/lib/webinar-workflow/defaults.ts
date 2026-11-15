@@ -117,6 +117,7 @@ export function createDefaultWorkflowConfig(options: {
       showDateTime: true,
       showPresenters: true,
       showVideoPreview: false,
+      videoPreview: { source: "clip", clipPercent: 10, customUrl: "" },
       phoneField: "hidden",
       customQuestions: [],
       capacity: null,

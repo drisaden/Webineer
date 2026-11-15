@@ -77,12 +77,13 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
   );
 }
 
-export function RegisterForm() {
+export function RegisterForm({ plan }: { plan?: string }) {
   const [state, action, pending] = useActionState(signUpAction, initial);
   if (state.status === "success") return <div className="mt-8"><FormMessage state={state} /></div>;
   return (
     <form action={action} className="mt-8 space-y-5">
       <FormMessage state={state} />
+      {plan && <input type="hidden" name="plan" value={plan} />}
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor="firstName" className="mb-2 block text-sm font-medium">First name</label>

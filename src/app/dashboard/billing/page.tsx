@@ -28,7 +28,7 @@ async function liveUsage(organizationId: string) {
   return { webinars, registrants, members };
 }
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ payment?: string }> }) {
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ payment?: string; plan?: string }> }) {
   const query = await searchParams;
   const data = await getBillingData();
   if (!data) redirect("/login?next=/dashboard/billing");
@@ -44,6 +44,8 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       })()
     : { ...(await liveUsage(app!.organization.id)), domains: 0 };
   const notice = query.payment ? PAYMENT_NOTICES[query.payment] : undefined;
+  // Arriving from sign-up with a plan picked on the pricing page: point at that plan.
+  const wanted = query.plan && query.plan in SAAS_PLANS && query.plan !== "free" && query.plan !== currentKey ? (query.plan as keyof typeof SAAS_PLANS) : null;
 
   return (
     <DashboardShell title="Billing & Entitlements">
@@ -51,6 +53,18 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         {notice && (
           <div role="status" className={`rounded-2xl border px-4 py-3 text-sm ${notice.tone === "success" ? "border-[#BDEBD6] bg-[#EAFBF5] text-[#11724B]" : notice.tone === "danger" ? "border-[#F5D7D7] bg-[#FFF6F6] text-[#B33A3A]" : "border-border bg-white text-secondaryText"}`}>
             {notice.text}
+          </div>
+        )}
+        {wanted && !demo && (
+          <div role="status" className="flex flex-col gap-3 rounded-2xl border border-[#BDEBD6] bg-[#EAFBF5] px-4 py-3 text-sm text-[#11724B] md:flex-row md:items-center md:justify-between">
+            <span>
+              You picked <strong>{SAAS_PLANS[wanted].name}</strong> when you signed up. Complete the payment to activate it, or keep using the free plan.
+            </span>
+            {data.canManageBilling && data.paymentsReady && (
+              <div className="w-full md:w-56">
+                <UpgradeButton plan={wanted} label={`Pay for ${SAAS_PLANS[wanted].name}`} />
+              </div>
+            )}
           </div>
         )}
         <Card className="p-5">

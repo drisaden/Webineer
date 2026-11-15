@@ -11,6 +11,15 @@ export interface Viewer {
   organizations: { id: string; name: string }[];
   mode: "supabase" | "demo";
   isPlatformAdmin: boolean;
+  /** Whether file uploads (Cloudinary) are configured; the upload API re-checks. */
+  uploadsEnabled?: boolean;
+  /** First-run state. Display only: the server re-checks before changing anything. */
+  onboarding?: {
+    /** The workspace owner hasn't picked a plan yet: show the plan chooser before the dashboard. */
+    needsPlanChoice: boolean;
+    /** The user hasn't seen the product tour yet. */
+    showTour: boolean;
+  };
 }
 
 const ViewerContext = createContext<Viewer | null>(null);

@@ -19,8 +19,8 @@ export async function GET(request: Request) {
 
   try {
     const db = getPrisma();
-    const { profile, workspaceName } = await syncUserProfile(db, data.user);
-    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName);
+    const { profile, workspaceName, planPreselected } = await syncUserProfile(db, data.user);
+    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, planPreselected);
   } catch (err) {
     console.error("[auth] profile sync after code exchange failed", err);
     redirect("/account-unavailable");

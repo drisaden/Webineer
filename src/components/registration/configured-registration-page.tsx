@@ -2,11 +2,15 @@ import Link from "next/link";
 import { CalendarClock, UserRound } from "lucide-react";
 import type { PublicRegistrationView } from "@/lib/webinar-workflow/public-view";
 import type { RegistrationSource } from "@/types";
+import { DesignedRegistrationPage } from "@/components/page-design/designed-registration-page";
+import { PreviewPlayer } from "./preview-player";
 import { RegistrationForm } from "./registration-form";
 import { TrackingScripts } from "./tracking-scripts";
 
 /** Hosted registration page rendered from the workflow configuration. */
 export function ConfiguredRegistrationPage({ view, preview, source }: { view: PublicRegistrationView; preview: boolean; source: RegistrationSource }) {
+  // A custom drag-and-drop design replaces the standard layout below when one is enabled.
+  if (view.page) return <DesignedRegistrationPage view={view} design={view.page} preview={preview} source={source} />;
   return (
     <main className="relative z-10 min-h-screen bg-[#F7F9FC] px-4 py-8 text-primaryText md:px-6">
       {!preview && <TrackingScripts {...view.tracking} />}
@@ -47,12 +51,10 @@ export function ConfiguredRegistrationPage({ view, preview, source }: { view: Pu
               </div>
             </div>
 
-            {view.videoPlayerUrl && (
+            {view.videoPreview && (
               <div className="overflow-hidden rounded-[2rem] border border-border bg-white p-3 shadow-soft">
                 <div className="overflow-hidden rounded-[1.5rem] border border-border bg-[#101B35]">
-                  <div className="aspect-video w-full bg-[#111C2E]">
-                    <iframe src={view.videoPlayerUrl} title={view.title} className="h-full w-full" allow="fullscreen; picture-in-picture; encrypted-media" allowFullScreen />
-                  </div>
+                  <PreviewPlayer source={view.videoPreview} title={view.title} />
                 </div>
               </div>
             )}
@@ -83,7 +85,7 @@ export function ConfiguredRegistrationPage({ view, preview, source }: { view: Pu
             )}
           </section>
 
-          <aside className="h-fit rounded-[2rem] border border-border bg-white p-6 shadow-soft lg:sticky lg:top-6">
+          <aside id="register" className="h-fit scroll-mt-6 rounded-[2rem] border border-border bg-white p-6 shadow-soft lg:sticky lg:top-6">
             <h2 className="text-2xl font-semibold text-primaryText">Reserve your seat</h2>
             <p className="mt-2 mb-5 text-sm text-secondaryText">{view.title}</p>
             <RegistrationForm view={view} source={source} embedded={false} preview={preview} />

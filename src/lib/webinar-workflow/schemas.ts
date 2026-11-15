@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pageDesignSchema } from "@/lib/page-design/schema";
 import type { WorkflowDataSectionKey } from "@/types";
 
 /**
@@ -90,6 +91,13 @@ export const sectionSchemas = {
     showDateTime: z.boolean(),
     showPresenters: z.boolean(),
     showVideoPreview: z.boolean(),
+    videoPreview: z
+      .object({
+        source: z.enum(["clip", "custom"]),
+        clipPercent: z.number().int().min(5).max(50),
+        customUrl: str(1000),
+      })
+      .optional(),
     phoneField: z.enum(["hidden", "optional", "required"]),
     customQuestions: z
       .array(
@@ -112,6 +120,7 @@ export const sectionSchemas = {
       buttonRadius: z.number().int().min(0).max(40),
       allowedDomains: z.array(str(253)).max(20),
     }),
+    page: pageDesignSchema.optional(),
   }),
   notifications: z.object({
     confirmation: emailMessage,

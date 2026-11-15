@@ -26,7 +26,8 @@ import {
   popupEmbedSnippet,
   registrationButtonSnippet,
 } from "@/lib/webinar-workflow/embed";
-import type { CustomQuestion, CustomQuestionType, WebinarWorkflowConfig } from "@/types";
+import { clampPreviewPercent, clipPreviewSupported, DEFAULT_VIDEO_PREVIEW, PREVIEW_PERCENT_MAX, PREVIEW_PERCENT_MIN } from "@/lib/webinar-workflow/preview";
+import type { CustomQuestion, CustomQuestionType, VideoPreviewSettings, WebinarWorkflowConfig } from "@/types";
 import {
   CopyField,
   errorFor,
@@ -40,6 +41,7 @@ import {
   Toggle,
   UnavailableBadge,
 } from "../form-controls";
+import { MediaUploadField } from "@/components/uploads/media-upload-field";
 import type { SectionProps } from "../section-types";
 
 const TABS = [
@@ -192,7 +194,7 @@ function PageCustomization({ draft, update, issues, showErrors, context }: Secti
         <TextInput label="Browser page title" optional value={r.pageTitle} onChange={(v) => set("pageTitle", v)} placeholder={draft.configuration.title || "Defaults to the webinar title"} maxLength={150} />
         <TextInput label="Headline" value={r.headline} onChange={(v) => set("headline", v)} placeholder="e.g. Learn the 5-step launch framework" maxLength={200} error={errorFor(issues, "headline", showErrors)} />
         <TextArea label="Supporting description" optional value={r.description} onChange={(v) => set("description", v)} rows={4} maxLength={3000} placeholder={draft.configuration.description || "Defaults to the webinar description"} />
-        <TextInput label="Cover image URL" optional value={r.coverImageUrl} onChange={(v) => set("coverImageUrl", v.trim())} placeholder="Defaults to the webinar cover image" error={errorFor(issues, "coverImageUrl", showErrors)} />
+        <MediaUploadField label="Cover image" optional value={r.coverImageUrl} onChange={(v) => set("coverImageUrl", v)} placeholder="Defaults to the webinar cover image" error={errorFor(issues, "coverImageUrl", showErrors)} />
         <div className="grid gap-5 md:grid-cols-2">
           <TextInput label="Button text" value={r.buttonText} onChange={(v) => set("buttonText", v)} maxLength={60} error={errorFor(issues, "buttonText", showErrors)} />
           <div>
@@ -207,7 +209,13 @@ function PageCustomization({ draft, update, issues, showErrors, context }: Secti
         </div>
         <Toggle label="Show date & time" checked={r.showDateTime} onChange={(v) => set("showDateTime", v)} />
         <Toggle label="Show presenters" checked={r.showPresenters} onChange={(v) => set("showPresenters", v)} />
-        <Toggle label="Show video preview on the hosted page" description="Embeds the webinar video under the headline." checked={r.showVideoPreview} onChange={(v) => set("showVideoPreview", v)} />
+        <Toggle
+          label="Show a video preview on the hosted page"
+          description="A short taste of the webinar under the headline. The full video is only ever shown in the room."
+          checked={r.showVideoPreview}
+          onChange={(v) => set("showVideoPreview", v)}
+        />
+        {r.showVideoPreview && <VideoPreviewSettingsPanel draft={draft} onChange={(next) => set("videoPreview", next)} error={errorFor(issues, "videoPreview", showErrors)} />}
       </SectionCard>
 
       <SectionCard title="Preview" description={context.webinarId ? "Live preview of the saved page." : "Save the draft to see a live preview."} icon={<Eye className="h-4 w-4" />}>
@@ -219,17 +227,22 @@ function PageCustomization({ draft, update, issues, showErrors, context }: Secti
             </a>
           </Button>
         )}
-        <p className="text-xs text-secondaryText">
-          Looking for more layout control? The existing{" "}
+        <div className="rounded-2xl border border-border bg-[#F7F9FC] p-4">
+          <p className="text-sm font-medium text-primaryText">{r.page?.enabled ? "This webinar uses a custom page design" : "Want full control of the layout?"}</p>
+          <p className="mt-1 text-xs text-secondaryText">
+            The page designer lets you drag blocks into place, add images, testimonials, FAQs and a countdown, and set your own colours.
+            {r.page?.enabled ? " The mini preview above shows the standard layout, not your design." : ""}
+          </p>
           {context.webinarId ? (
-            <a className="underline" href={`/dashboard/webinars/${context.webinarId}/landing-page`}>
-              landing page builder
-            </a>
+            <Button asChild size="sm" className="mt-3">
+              <a href={`/dashboard/webinars/${context.webinarId}/landing-page`} data-testid="open-page-designer">
+                <LayoutTemplate className="mr-2 h-4 w-4" /> {r.page ? "Edit page design" : "Open page designer"}
+              </a>
+            </Button>
           ) : (
-            "landing page builder"
-          )}{" "}
-          remains available for this webinar.
-        </p>
+            <p className="mt-2 text-xs text-secondaryText">Save the draft first to open the designer.</p>
+          )}
+        </div>
       </SectionCard>
     </div>
   );
@@ -490,6 +503,73 @@ function Metric({ label, value, hint }: { label: string; value: number | string;
       <p className="text-xs text-secondaryText">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-primaryText">{value}</p>
       {hint && <p className="text-[11px] text-secondaryText">{hint}</p>}
+    </div>
+  );
+}
+
+/** Chooses what the registration page previews: the opening part of the webinar video, or a separate short clip. */
+function VideoPreviewSettingsPanel({ draft, onChange, error }: { draft: SectionProps["draft"]; onChange: (next: VideoPreviewSettings) => void; error?: string }) {
+  const preview = draft.registration.videoPreview ?? DEFAULT_VIDEO_PREVIEW;
+  const mainUrl = draft.integrations.video.url.trim();
+  const clipWorks = !mainUrl || clipPreviewSupported(mainUrl);
+  const option = (value: VideoPreviewSettings["source"], title: string, description: string) => {
+    const active = preview.source === value;
+    return (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={active}
+        onClick={() => onChange({ ...preview, source: value })}
+        className={cn(
+          "rounded-2xl border p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0AEBCB]/60",
+          active ? "border-[#16D6B2] bg-[#EAFBF5]" : "border-border bg-white hover:bg-[#F7F9FC]",
+        )}
+      >
+        <span className="block text-sm font-medium text-primaryText">{title}</span>
+        <span className="mt-1 block text-xs text-secondaryText">{description}</span>
+      </button>
+    );
+  };
+  return (
+    <div className="space-y-4 rounded-2xl border border-border bg-[#F7F9FC] p-4" data-testid="video-preview-settings">
+      <div role="radiogroup" aria-label="Video preview source" className="grid gap-3 md:grid-cols-2">
+        {option("clip", "Part of the webinar video", "Plays only the opening part, then invites visitors to register.")}
+        {option("custom", "A separate short video", "Upload a teaser or paste a link to one.")}
+      </div>
+      {preview.source === "clip" ? (
+        <div>
+          <label htmlFor="preview-percent" className="mb-2 flex items-center justify-between text-sm font-medium text-primaryText">
+            <span>How much to show</span>
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-[#17294B]">First {clampPreviewPercent(preview.clipPercent)}%</span>
+          </label>
+          <input
+            id="preview-percent"
+            type="range"
+            min={PREVIEW_PERCENT_MIN}
+            max={PREVIEW_PERCENT_MAX}
+            step={5}
+            value={clampPreviewPercent(preview.clipPercent)}
+            onChange={(event) => onChange({ ...preview, clipPercent: clampPreviewPercent(Number(event.target.value)) })}
+            className="w-full accent-[#16D6B2]"
+          />
+          <p className="mt-1.5 text-xs text-secondaryText">
+            The preview stops at this point and shows a register button. It works with YouTube, Vimeo and direct video links.
+          </p>
+          {!clipWorks && <Notice tone="warning">Your webinar video can&apos;t be limited to a clip. Use a separate short video instead, or the preview won&apos;t be shown.</Notice>}
+        </div>
+      ) : (
+        <MediaUploadField
+          kind="video"
+          label="Preview video"
+          value={preview.customUrl}
+          onChange={(v) => onChange({ ...preview, customUrl: v })}
+          placeholder="https://… (YouTube, Vimeo or a video file)"
+          previewClassName="aspect-video"
+          hint="Keep it short: 30–90 seconds works well."
+          error={error}
+        />
+      )}
+      {preview.source === "clip" && error && <Notice tone="error">{error}</Notice>}
     </div>
   );
 }

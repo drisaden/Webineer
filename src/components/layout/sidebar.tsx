@@ -8,22 +8,22 @@ import { APP_NAME } from "@/lib/constants/site";
 
 const nav = [
   { label: "Overview", href: "/dashboard", icon: LayoutGrid },
-  { label: "All Webinars", href: "/dashboard/webinars", icon: Video },
+  { label: "All Webinars", href: "/dashboard/webinars", icon: Video, tour: "nav-webinars" },
   { label: "Upcoming", href: "/dashboard/webinars/upcoming", icon: CalendarClock },
   { label: "Past Webinars", href: "/dashboard/webinars/past", icon: Archive },
   { label: "Automated Webinars", href: "/dashboard/webinars/automated", icon: Sparkles },
-  { label: "Automations", href: "/dashboard/automations", icon: Wand2 },
-  { label: "Registrants", href: "/dashboard/registrants", icon: Users },
+  { label: "Automations", href: "/dashboard/automations", icon: Wand2, tour: "nav-automations" },
+  { label: "Registrants", href: "/dashboard/registrants", icon: Users, tour: "nav-registrants" },
   { label: "Contacts", href: "/dashboard/contacts", icon: MessageSquareText },
-  { label: "Landing Pages", href: "/dashboard/landing-pages", icon: FileText },
-  { label: "Emails", href: "/dashboard/emails", icon: Bell },
+  { label: "Landing Pages", href: "/dashboard/landing-pages", icon: FileText, tour: "nav-landing-pages" },
+  { label: "Emails", href: "/dashboard/emails", icon: Bell, tour: "nav-emails" },
   { label: "Email Campaigns", href: "/dashboard/email-campaigns", icon: Bell },
   { label: "Integrations", href: "/dashboard/integrations", icon: Plug },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, tour: "nav-analytics" },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
-  { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { label: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
-];
+  { label: "Billing", href: "/dashboard/billing", icon: CreditCard, tour: "nav-billing" },
+  { label: "Help & Support", href: "/dashboard/help", icon: HelpCircle, tour: "nav-help" },
+] as { label: string; href: string; icon: typeof LayoutGrid; tour?: string }[];
 
 // The demo notice is only true for the local demo (no Supabase configured). Never show it on a real workspace.
 const DEMO_WORKSPACE =
@@ -43,12 +43,13 @@ export function Sidebar({ mobile = false }: { mobile?: boolean }) {
         <div>
           <p className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">Overview</p>
           <nav className="space-y-1.5">
-            {nav.map(({ label, href, icon: Icon }) => {
+            {nav.map(({ label, href, icon: Icon, tour }) => {
               const isActive = href === "/dashboard" ? pathname === href : (pathname === href || pathname.startsWith(`${href}/`));
               return (
                 <Link
                   key={href}
                   href={href}
+                  data-tour={tour}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
                     isActive ? "bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" : "text-white/70 hover:bg-white/5 hover:text-white",

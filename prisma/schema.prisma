@@ -217,6 +217,8 @@ model User {
   status          UserStatus @default(ACTIVE)
   emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(6)
   lastSignInAt    DateTime?  @map("last_sign_in_at") @db.Timestamptz(6)
+  /// Set when the user finishes or skips the first-run product tour.
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -257,6 +259,8 @@ model Organization {
   currency     CurrencyCode       @default(NGN)
   branding     Json?
   customDomain String?            @unique @map("custom_domain")
+  /// Set once the owner has chosen a plan (Free included); until then the plan chooser is shown before the dashboard.
+  planSelectedAt DateTime?        @map("plan_selected_at") @db.Timestamptz(6)
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt    DateTime?          @map("deleted_at") @db.Timestamptz(6)

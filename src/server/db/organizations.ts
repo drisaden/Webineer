@@ -16,14 +16,21 @@ export function slugifyOrganizationName(name: string): string {
 export async function createOrganizationWithOwner(
   db: Db,
   owner: { id: string; email: string },
-  input: { name: string; timezone?: string; currency?: "NGN" | "USD" | "EUR" | "GBP" },
+  input: { name: string; timezone?: string; currency?: "NGN" | "USD" | "EUR" | "GBP"; planSelected?: boolean },
 ) {
   const base = slugifyOrganizationName(input.name);
   return db.$transaction(async (tx) => {
     let slug = base;
     for (let n = 2; await tx.organization.findUnique({ where: { slug }, select: { id: true } }); n += 1) slug = `${base}-${n}`;
     const organization = await tx.organization.create({
-      data: { name: input.name.trim(), slug, timezone: input.timezone ?? "Africa/Lagos", currency: input.currency ?? "NGN" },
+      data: {
+        name: input.name.trim(),
+        slug,
+        timezone: input.timezone ?? "Africa/Lagos",
+        currency: input.currency ?? "NGN",
+        // A plan picked before sign-up (pricing page) counts as chosen, so the plan chooser is skipped.
+        planSelectedAt: input.planSelected ? new Date() : null,
+      },
     });
     await tx.membership.create({ data: { organizationId: organization.id, userId: owner.id, role: "OWNER", status: "ACTIVE" } });
     await tx.auditLog.create({

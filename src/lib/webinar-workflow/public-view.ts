@@ -1,8 +1,9 @@
-import type { CustomQuestion, Webinar } from "@/types";
+import { publishablePageDesign } from "@/lib/page-design/schema";
+import type { CustomQuestion, PageDesign, Webinar } from "@/types";
 import { nextEvergreenSession, primarySessionWindow, registrationWindow } from "./sync";
 import { formatInZone, resolveSessions } from "./time";
 import { GA_ID_RE, META_PIXEL_RE } from "./validation";
-import { buildPlayerUrl } from "./video";
+import { resolveVideoPreview, type PreviewSource } from "./preview";
 
 /**
  * The only webinar data sent to public pages and embeds. Built server-side
@@ -30,7 +31,10 @@ export interface PublicRegistrationView {
   sessions: { id: string; label: string }[];
   phoneField: "hidden" | "optional" | "required";
   customQuestions: CustomQuestion[];
-  videoPlayerUrl: string | null;
+  /** Custom page design, only when enabled and valid; null = standard layout. */
+  page: PageDesign | null;
+  /** Limited preview for the registration page; never the full webinar video. */
+  videoPreview: PreviewSource | null;
   price: { amount: number; currency: string; testMode: boolean } | null;
   closedReason: string | null;
   tracking: { googleAnalyticsId: string | null; metaPixelId: string | null };
@@ -110,7 +114,8 @@ export function buildPublicView(
     sessions: upcoming.map((s) => ({ id: s.id, label: formatInZone(s.startsAt, tz) })),
     phoneField: r.phoneField,
     customQuestions: r.customQuestions.filter((q) => q.label.trim()),
-    videoPlayerUrl: r.showVideoPreview ? buildPlayerUrl(config.integrations.video.provider, config.integrations.video.url) : null,
+    page: publishablePageDesign(r.page),
+    videoPreview: resolveVideoPreview(config),
     price: paid ? { amount: config.integrations.payment.price, currency: config.integrations.payment.currency, testMode: options.paymentTestMode } : null,
     closedReason,
     tracking: {

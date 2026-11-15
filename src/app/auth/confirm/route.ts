@@ -33,8 +33,8 @@ export async function GET(request: Request) {
 
   try {
     const db = getPrisma();
-    const { profile, workspaceName } = await syncUserProfile(db, data.user);
-    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName);
+    const { profile, workspaceName, planPreselected } = await syncUserProfile(db, data.user);
+    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, planPreselected);
     await db.auditLog.create({ data: { action: `auth.link_verified.${type}`, actorUserId: profile.id, actorEmail: profile.email } });
   } catch (err) {
     console.error("[auth] profile sync after link verification failed", err);

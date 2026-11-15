@@ -1,6 +1,7 @@
 import type { WebinarWorkflowConfig } from "./webinar-workflow";
 
 export type * from "./webinar-workflow";
+export type * from "./page-design";
 
 export type WebinarStatus = "draft" | "scheduled" | "live" | "completed" | "paused";
 

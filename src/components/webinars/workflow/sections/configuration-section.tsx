@@ -3,10 +3,11 @@
 import { CalendarClock, ImageIcon, Infinity as InfinityIcon, Plus, Trash2, UserRound, Users, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { randomId, WEBINAR_CATEGORIES } from "@/lib/webinar-workflow/defaults";
-import { isHttpsUrl } from "@/lib/webinar-workflow/validation";
+
 import { listTimeZones } from "@/lib/webinar-workflow/time";
 import type { WebinarConfigurationMode } from "@/types";
 import { errorFor, IssueSummary, Notice, SectionCard, SelectInput, TextArea, TextInput } from "../form-controls";
+import { MediaUploadField } from "@/components/uploads/media-upload-field";
 import type { SectionProps } from "../section-types";
 
 const MODES: { value: WebinarConfigurationMode; title: string; description: string; icon: typeof Zap }[] = [
@@ -36,14 +37,13 @@ export function ConfigurationSection({ draft, update, issues, showErrors, goTo, 
         <TextInput label="Webinar title" value={c.title} onChange={(v) => set("title", v)} placeholder="e.g. Launch Your First Online Course" maxLength={150} error={errorFor(issues, "title", showErrors)} />
         <TextArea label="Short description" value={c.description} onChange={(v) => set("description", v)} rows={3} maxLength={2000} placeholder="What will attendees learn?" error={errorFor(issues, "description", showErrors)} />
         <div className="grid gap-5 md:grid-cols-2">
-          <TextInput
-            label="Cover image URL"
+          <MediaUploadField
+            label="Cover image"
             optional
             value={c.coverImageUrl}
-            onChange={(v) => set("coverImageUrl", v.trim())}
+            onChange={(v) => set("coverImageUrl", v)}
             placeholder="https://…/cover.jpg"
-            hint="Webineer doesn't host media files. Paste a link to an image hosted elsewhere."
-            error={errorFor(issues, "coverImageUrl", showErrors) ?? (c.coverImageUrl && !isHttpsUrl(c.coverImageUrl) ? "Use an https:// image URL." : undefined)}
+            error={errorFor(issues, "coverImageUrl", showErrors)}
           />
           <SelectInput
             label="Category"
@@ -53,10 +53,6 @@ export function ConfigurationSection({ draft, update, issues, showErrors, goTo, 
             options={[{ value: "", label: "Choose a category" }, ...WEBINAR_CATEGORIES.map((x) => ({ value: x, label: x }))]}
           />
         </div>
-        {c.coverImageUrl && isHttpsUrl(c.coverImageUrl) && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={c.coverImageUrl} alt="Cover preview" className="aspect-[16/7] w-full rounded-xl border border-border object-cover" />
-        )}
       </SectionCard>
 
       <SectionCard title="Host & presenters" description="Shown on the registration page and in the webinar room." icon={<UserRound className="h-4 w-4" />}>
@@ -83,7 +79,7 @@ export function ConfigurationSection({ draft, update, issues, showErrors, goTo, 
               <div className="grid gap-4 md:grid-cols-2">
                 <TextInput label="Name" value={p.name} onChange={(v) => set("presenters", c.presenters.map((x) => (x.id === p.id ? { ...x, name: v } : x)))} error={errorFor(issues, `presenters.${i}`, showErrors)} />
                 <TextInput label="Role / title" optional value={p.title} onChange={(v) => set("presenters", c.presenters.map((x) => (x.id === p.id ? { ...x, title: v } : x)))} />
-                <TextInput label="Photo URL" optional value={p.avatarUrl} onChange={(v) => set("presenters", c.presenters.map((x) => (x.id === p.id ? { ...x, avatarUrl: v.trim() } : x)))} placeholder="https://…" />
+                <MediaUploadField label="Photo" optional compact value={p.avatarUrl} onChange={(v) => set("presenters", c.presenters.map((x) => (x.id === p.id ? { ...x, avatarUrl: v } : x)))} placeholder="https://…" />
                 <TextInput label="Short bio" optional value={p.bio} onChange={(v) => set("presenters", c.presenters.map((x) => (x.id === p.id ? { ...x, bio: v } : x)))} maxLength={1000} />
               </div>
             </div>

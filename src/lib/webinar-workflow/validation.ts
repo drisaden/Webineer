@@ -8,6 +8,8 @@ import type {
   WorkflowSectionKey,
 } from "@/types";
 import { DATA_SECTION_KEYS } from "./defaults";
+import { pageDesignSchema } from "@/lib/page-design/schema";
+import { clipPreviewSupported, DEFAULT_VIDEO_PREVIEW } from "./preview";
 import { isValidLocalDate, isValidTimeZone, resolveSessions, zonedDateTimeToUtc } from "./time";
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -154,6 +156,18 @@ const checks: Record<WorkflowDataSectionKey, Check> = {
     if (!r.headline.trim()) issues.push(err("registration", "Add a registration page headline.", "headline"));
     if (!r.buttonText.trim()) issues.push(err("registration", "Add registration button text.", "buttonText"));
     if (r.coverImageUrl && !isHttpsUrl(r.coverImageUrl)) issues.push(err("registration", "Registration cover image must be an https:// URL.", "coverImageUrl"));
+    if (r.page?.enabled && !pageDesignSchema.safeParse(r.page).success) {
+      issues.push(err("registration", "The custom page design has a problem. Open the page designer to fix it, or switch back to the standard layout.", "page"));
+    }
+    if (r.showVideoPreview) {
+      const preview = r.videoPreview ?? DEFAULT_VIDEO_PREVIEW;
+      if (preview.source === "custom") {
+        if (!preview.customUrl.trim()) issues.push(err("registration", "Add a short preview video, or switch the preview to a clip of the webinar video.", "videoPreview"));
+        else if (!clipPreviewSupported(preview.customUrl)) issues.push(err("registration", "The preview video must be a YouTube, Vimeo or direct video (https) link.", "videoPreview"));
+      } else if (config.integrations.video.url.trim() && !clipPreviewSupported(config.integrations.video.url)) {
+        issues.push(warn("registration", "A clip preview needs a YouTube, Vimeo or direct video link as the webinar video. Use a separate short preview video instead, or the preview won't be shown.", "videoPreview"));
+      }
+    }
     r.customQuestions.forEach((q, i) => {
       if (!q.label.trim()) issues.push(err("registration", `Custom question ${i + 1}: add a label.`, `customQuestions.${i}`));
       if (q.type === "select" && q.options.filter((o) => o.trim()).length < 2) {

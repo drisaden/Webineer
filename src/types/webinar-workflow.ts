@@ -1,4 +1,5 @@
 import type { EvergreenScheduleType, VideoProviderValue } from "./index";
+import type { PageDesign } from "./page-design";
 
 /**
  * Nine-section webinar workflow configuration.
@@ -107,6 +108,16 @@ export interface EmbedSettings {
   allowedDomains: string[];
 }
 
+/** How the registration page previews the webinar video (never the whole video). */
+export interface VideoPreviewSettings {
+  /** "clip": only the opening part of the webinar video. "custom": a separate short video. */
+  source: "clip" | "custom";
+  /** For "clip": how much of the webinar video plays, in percent (5–50). */
+  clipPercent: number;
+  /** For "custom": https link to a short preview video (uploaded or hosted elsewhere). */
+  customUrl: string;
+}
+
 export interface RegistrationSettings {
   pageTitle: string;
   headline: string;
@@ -117,11 +128,15 @@ export interface RegistrationSettings {
   showDateTime: boolean;
   showPresenters: boolean;
   showVideoPreview: boolean;
+  /** Absent on webinars saved before previews were configurable: treated as a 10% clip. */
+  videoPreview?: VideoPreviewSettings;
   phoneField: "hidden" | "optional" | "required";
   customQuestions: CustomQuestion[];
   /** null = unlimited */
   capacity: number | null;
   embed: EmbedSettings;
+  /** Custom drag-and-drop page design. Absent or disabled = the standard layout. */
+  page?: PageDesign;
 }
 
 export interface EmailMessageSettings {

@@ -8,6 +8,11 @@ import { getStore } from "@/server/repositories";
 
 export const dynamic = "force-dynamic";
 
+/** Early entry is allowed, but the video itself waits for the scheduled start. */
+function hasStarted(sessionStart: Date): boolean {
+  return Date.now() >= sessionStart.getTime();
+}
+
 export default async function WebinarRoomPage({
   params,
   searchParams,
@@ -53,7 +58,7 @@ export default async function WebinarRoomPage({
             <p className="text-xs uppercase tracking-[0.16em] text-secondaryText">Attendee room</p>
             <h1 className="mt-1 text-2xl font-semibold text-primaryText">{webinar.title}</h1>
           </header>
-          <ConfiguredRoom webinar={webinar} sessionStart={decision.sessionStart} host={decision.host} />
+          <ConfiguredRoom webinar={webinar} sessionStart={decision.sessionStart} host={decision.host} started={decision.host || hasStarted(decision.sessionStart)} />
         </div>
       </main>
     );

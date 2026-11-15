@@ -16,8 +16,7 @@
   --font-body: "Outfit", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-body.dark,
-html.dark {
+body.dark {
   --background: #071426;
   --foreground: #EEF6FF;
   --primary: #EEF6FF;
@@ -27,37 +26,6 @@ html.dark {
   --border: rgba(148, 163, 184, 0.2);
   --surface: rgba(15, 23, 42, 0.76);
   --shadow-soft: 0 22px 50px rgba(2, 6, 23, 0.42);
-}
-
-html.dark .text-primaryText,
-body.dark .text-primaryText {
-  color: var(--foreground) !important;
-}
-
-html.dark .text-secondaryText,
-body.dark .text-secondaryText {
-  color: var(--muted) !important;
-}
-
-html.dark .border-white\/60,
-body.dark .border-white\/60 {
-  border-color: rgba(148, 163, 184, 0.24) !important;
-}
-
-html.dark .bg-white\/75,
-body.dark .bg-white\/75,
-html.dark .bg-white\/70,
-body.dark .bg-white\/70,
-html.dark .bg-white\/65,
-body.dark .bg-white\/65,
-html.dark .bg-white\/80,
-body.dark .bg-white\/80 {
-  background-color: rgba(15, 23, 42, 0.76) !important;
-}
-
-html.dark .bg-\[\#F7F9FC\]\/80,
-body.dark .bg-\[\#F7F9FC\]\/80 {
-  background-color: rgba(15, 23, 42, 0.8) !important;
 }
 
 html {
@@ -214,4 +182,63 @@ body.dark .glass-panel {
 
 .shadow-soft {
   box-shadow: var(--shadow-soft);
+}
+
+/* First-run onboarding: spotlight that glides between targets, and entrance animations. */
+.tour-spotlight {
+  box-shadow: 0 0 0 9999px rgba(4, 27, 94, 0.58), 0 0 0 2px rgba(10, 235, 203, 0.9);
+  transition: top 0.45s cubic-bezier(0.22, 1, 0.36, 1), left 0.45s cubic-bezier(0.22, 1, 0.36, 1), width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tour-pulse {
+  box-shadow: 0 0 0 0 rgba(10, 235, 203, 0.55);
+  animation: tour-pulse 1.8s ease-out infinite;
+}
+
+.tour-card {
+  animation: tour-card-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: top 0.45s cubic-bezier(0.22, 1, 0.36, 1), left 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tour-icon {
+  animation: tour-icon-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.plan-chooser-enter {
+  animation: plan-chooser-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tour-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(10, 235, 203, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(10, 235, 203, 0); }
+}
+
+@keyframes tour-card-in {
+  from { opacity: 0; margin-top: 10px; }
+  to { opacity: 1; margin-top: 0; }
+}
+
+@keyframes tour-icon-in {
+  from { opacity: 0; scale: 0.6; rotate: -12deg; }
+  to { opacity: 1; scale: 1; rotate: 0deg; }
+}
+
+@keyframes plan-chooser-in {
+  from { opacity: 0; scale: 0.97; translate: 0 12px; }
+  to { opacity: 1; scale: 1; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-spotlight, .tour-card { transition: none; }
+  .tour-pulse, .tour-card, .tour-icon, .plan-chooser-enter { animation: none; }
+}
+
+/* Page-design blocks take any text colour, so their soft fills and hairlines derive from it. */
+.tint-soft {
+  background-color: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.tint-border {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
 }

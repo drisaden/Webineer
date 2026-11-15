@@ -40,14 +40,18 @@ export default async function LandingPagesPage() {
 
               <div className="mt-4 rounded-2xl border border-border bg-[#F7F9FC] p-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-primaryText">
-                  <CheckCircle2 className="h-4 w-4 text-[#16A36A]" />
-                  Ready to publish
+                  <CheckCircle2 className={`h-4 w-4 ${webinar.workflow?.registration.page?.enabled ? "text-[#16A36A]" : "text-secondaryText"}`} />
+                  {webinar.workflow?.registration.page?.enabled ? "Custom design" : "Standard layout"}
                 </div>
-                <p className="mt-2 text-xs text-secondaryText">Hero, features, CTA, and form blocks are staged for the live event.</p>
+                <p className="mt-2 text-xs text-secondaryText">
+                  {webinar.workflow?.registration.page?.enabled
+                    ? `${webinar.workflow.registration.page.blocks.length} blocks arranged in the page designer.`
+                    : "Open the designer to arrange blocks, add images and set your colours."}
+                </p>
               </div>
 
               <Link href={`/dashboard/webinars/${webinar.id}/landing-page`} className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#17294B]">
-                Edit page <ArrowRight className="h-4 w-4" />
+                Design page <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ))}
@@ -57,8 +61,8 @@ export default async function LandingPagesPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAFBF5] text-[#0F7B52]">
             <Sparkles className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-primaryText">Template library coming soon</h3>
-          <p className="mt-2 text-sm text-secondaryText">The page builder already supports hero sections, video blocks, CTA sections, and form layouts for live registration pages.</p>
+          <h3 className="mt-4 text-lg font-semibold text-primaryText">Drag-and-drop page designer</h3>
+          <p className="mt-2 text-sm text-secondaryText">Start from a template, then arrange hero, video preview, benefits, presenters, testimonials, FAQ and call-to-action blocks around your registration form.</p>
         </div>
       </div>
     </DashboardShell>

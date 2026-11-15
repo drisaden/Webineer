@@ -69,7 +69,7 @@ export async function requireOrgPermission(
 export async function listUserOrganizations(db: DbClient, userId: string) {
   return db.membership.findMany({
     where: { userId, status: "ACTIVE", organization: { status: "ACTIVE", deletedAt: null } },
-    include: { organization: { select: { id: true, name: true, slug: true, plan: true } } },
+    include: { organization: { select: { id: true, name: true, slug: true, plan: true, planSelectedAt: true } } },
     orderBy: { createdAt: "asc" },
   });
 }

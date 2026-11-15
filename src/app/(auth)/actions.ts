@@ -7,7 +7,7 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { originFromHeaders } from "@/lib/server/request-origin";
 import { getAuthMode, safeNextPath } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ensureDefaultOrganization, syncUserProfile } from "@/server/auth/session";
+import { ensureDefaultOrganization, isPlanKey, syncUserProfile } from "@/server/auth/session";
 import { getPrisma } from "@/server/db/prisma";
 
 export interface AuthFormState {
@@ -114,12 +114,12 @@ export async function signInAction(_prev: AuthFormState, formData: FormData): Pr
 
   try {
     const db = getPrisma();
-    const { profile, workspaceName } = await syncUserProfile(db, data.user);
+    const { profile, workspaceName, planPreselected } = await syncUserProfile(db, data.user);
     if (profile.status !== "ACTIVE") {
       await supabase.auth.signOut();
       return { status: "error", message: "This account has been suspended. Contact support for help." };
     }
-    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName);
+    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, planPreselected);
     await audit("auth.sign_in", { id: profile.id, email: profile.email });
   } catch (err) {
     console.error("[auth] profile sync failed", err);
@@ -146,6 +146,9 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
     .refine((v) => v.password === v.confirmPassword, { path: ["confirmPassword"], message: "Passwords don't match." })
     .safeParse(Object.fromEntries(["firstName", "lastName", "email", "workspaceName", "password", "confirmPassword"].map((k) => [k, formData.get(k) ?? ""])));
   const values = Object.fromEntries(["firstName", "lastName", "email", "workspaceName"].map((k) => [k, String(formData.get(k) ?? "").slice(0, 200)]));
+  // A plan picked on the pricing section before signing up (optional).
+  const planChoice = formData.get("plan");
+  const selectedPlan = isPlanKey(planChoice) ? planChoice : null;
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error), email: values.email, values };
 
   const ip = await clientKey();
@@ -160,9 +163,10 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: `${origin}/auth/confirm?next=/dashboard`,
+      // With a paid plan already chosen, land on Billing to complete it; otherwise the dashboard.
+      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(selectedPlan && selectedPlan !== "free" ? `/dashboard/billing?plan=${selectedPlan}` : "/dashboard")}`,
       // Display data only. Authorization never reads user_metadata.
-      data: { full_name: `${firstName} ${lastName}`.trim(), workspace_name: workspaceName },
+      data: { full_name: `${firstName} ${lastName}`.trim(), workspace_name: workspaceName, ...(selectedPlan ? { selected_plan: selectedPlan } : {}) },
     },
   });
   if (error) {
@@ -180,7 +184,7 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
   if (data.session && data.user) {
     const db = getPrisma();
     const { profile } = await syncUserProfile(db, data.user);
-    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName);
+    await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, Boolean(selectedPlan));
     redirect("/dashboard");
   }
   // Same response whether or not the email was already registered (no account enumeration).
