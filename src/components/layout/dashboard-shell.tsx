@@ -9,10 +9,10 @@ export function DashboardShell({ title, children }: { title: string; children: R
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader title={title} />
         <main className="flex-1 p-4 md:p-6">
-          <div className="mb-6 flex items-center justify-between gap-3 rounded-[1.5rem] border border-white/60 bg-white/65 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-[1.5rem] border border-white/60 bg-white/65 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-900/70 dark:shadow-[0_12px_30px_rgba(2,6,23,0.4)]">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.15em] text-secondaryText">Workspace</p>
-              <h1 className="mt-1 text-2xl text-primaryText">{title}</h1>
+              <p className="text-xs font-medium uppercase tracking-[0.15em] text-secondaryText dark:text-slate-300">Workspace</p>
+              <h1 className="mt-1 text-2xl text-primaryText dark:text-slate-50">{title}</h1>
             </div>
           </div>
           {children}

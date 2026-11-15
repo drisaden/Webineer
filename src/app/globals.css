@@ -16,7 +16,8 @@
   --font-body: "Outfit", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-body.dark {
+body.dark,
+html.dark {
   --background: #071426;
   --foreground: #EEF6FF;
   --primary: #EEF6FF;
@@ -26,6 +27,37 @@ body.dark {
   --border: rgba(148, 163, 184, 0.2);
   --surface: rgba(15, 23, 42, 0.76);
   --shadow-soft: 0 22px 50px rgba(2, 6, 23, 0.42);
+}
+
+html.dark .text-primaryText,
+body.dark .text-primaryText {
+  color: var(--foreground) !important;
+}
+
+html.dark .text-secondaryText,
+body.dark .text-secondaryText {
+  color: var(--muted) !important;
+}
+
+html.dark .border-white\/60,
+body.dark .border-white\/60 {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+html.dark .bg-white\/75,
+body.dark .bg-white\/75,
+html.dark .bg-white\/70,
+body.dark .bg-white\/70,
+html.dark .bg-white\/65,
+body.dark .bg-white\/65,
+html.dark .bg-white\/80,
+body.dark .bg-white\/80 {
+  background-color: rgba(15, 23, 42, 0.76) !important;
+}
+
+html.dark .bg-\[\#F7F9FC\]\/80,
+body.dark .bg-\[\#F7F9FC\]\/80 {
+  background-color: rgba(15, 23, 42, 0.8) !important;
 }
 
 html {
@@ -127,20 +159,24 @@ a {
   transition: all 0.2s ease;
 }
 
-.input-field {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 0.9rem;
-  background: #fff;
-  padding: 0.75rem 0.9rem;
-  color: var(--foreground);
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
+/* In the components layer so utility classes on the same element (e.g. pl-10 for a leading icon)
+   take precedence over these defaults instead of being overridden by them. */
+@layer components {
+  .input-field {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+    background: #fff;
+    padding: 0.75rem 0.9rem;
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
 
-.input-field:focus {
-  border-color: rgba(22, 214, 178, 0.8);
-  box-shadow: 0 0 0 3px rgba(22, 214, 178, 0.15);
+  .input-field:focus {
+    border-color: rgba(22, 214, 178, 0.8);
+    box-shadow: 0 0 0 3px rgba(22, 214, 178, 0.15);
+  }
 }
 
 .panel,
