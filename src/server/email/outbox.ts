@@ -9,6 +9,8 @@ import { describeSmtpError, describeSmtpLogin, isPermanentSmtpError, isSmtpAuthE
  */
 
 export const MAX_EMAIL_ATTEMPTS = 5;
+/** Undelivered auth emails older than this are dropped rather than sent with an expired link. */
+const AUTH_EMAIL_MAX_AGE_MS = 45 * 60_000;
 const BACKOFF_MINUTES = [1, 5, 15, 60, 240];
 const STALE_SENDING_MS = 10 * 60 * 1000;
 const uuid = /^[0-9a-f-]{36}$/i;
@@ -86,6 +88,15 @@ export async function deliverEmail(id: string): Promise<DeliveryOutcome> {
   const row = await db.emailLog.findUniqueOrThrow({ where: { id } });
   if (!cfg) {
     await db.emailLog.update({ where: { id }, data: { status: "SKIPPED", lastError: "SMTP is not configured.", bodyHtml: null, bodyText: null } });
+    return "skipped";
+  }
+  // Sign-in links (confirm, reset, magic link) are only valid for a short time. One that could not be
+  // delivered promptly must not go out hours later as a dead link; the person requests a fresh one.
+  if (row.template.startsWith("auth_") && now.getTime() - row.createdAt.getTime() > AUTH_EMAIL_MAX_AGE_MS) {
+    await db.emailLog.update({
+      where: { id },
+      data: { status: "SKIPPED", attempts: MAX_EMAIL_ATTEMPTS, scheduledFor: null, lastError: "Not sent: the link in this email had expired before it could be delivered.", bodyHtml: null, bodyText: null },
+    });
     return "skipped";
   }
   if (!row.bodyHtml && !row.bodyText) {
