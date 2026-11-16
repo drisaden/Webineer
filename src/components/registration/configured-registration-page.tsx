@@ -23,7 +23,7 @@ export function ConfiguredRegistrationPage({ view, preview, source }: { view: Pu
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
           <Logo tone="onLight" className="h-9 w-auto" />
-          <Link href="/" className="text-sm font-medium text-secondaryText">
+          <Link href="/" className="tap text-sm font-medium text-secondaryText">
             Back to homepage
           </Link>
         </header>

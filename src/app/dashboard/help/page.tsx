@@ -36,7 +36,7 @@ export default function HelpPage() {
               </span>
               <h3 className="mt-4 text-base font-semibold text-primaryText">{title}</h3>
               <p className="mt-1 flex-1 text-sm text-secondaryText">{body}</p>
-              <Link href={href} className="mt-4 text-sm font-medium text-[#17294B]">
+              <Link href={href} className="tap mt-2 text-sm font-medium text-[#17294B]">
                 {cta} →
               </Link>
             </div>

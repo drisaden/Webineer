@@ -304,7 +304,7 @@ export function WebinarWorkflow({
       <div className="flex min-w-0 flex-col gap-3 rounded-[1.5rem] border border-border bg-white p-4 shadow-soft md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/dashboard/webinars" className="text-xs font-medium text-secondaryText hover:text-primaryText">
+            <Link href="/dashboard/webinars" className="tap text-xs font-medium text-secondaryText hover:text-primaryText">
               All webinars
             </Link>
             <span className="text-xs text-secondaryText">/</span>

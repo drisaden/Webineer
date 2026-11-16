@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, PlayCircle, ShieldCheck, Sparkles, Video, Wan
 import { APP_NAME, APP_SUPPORTING_MESSAGE, APP_TAGLINE } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
+import { MarketingNav } from "@/components/marketing/marketing-nav";
 
 const capabilityList = [
   "External video integrations",
@@ -44,23 +45,7 @@ export default function MarketingPage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-transparent text-primaryText">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(10,235,203,0.2),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(4,27,94,0.12),transparent_28%)]" />
-      <header className="mx-auto max-w-7xl px-6 py-5">
-        <nav className="flex items-center justify-between rounded-full border border-white/60 bg-white/70 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <Logo tone="auto" className="h-9 w-auto" title={APP_NAME} />
-          </div>
-          <div className="hidden items-center gap-8 text-sm text-secondaryText md:flex">
-            <Link href="#platform">Platform</Link>
-            <Link href="#solutions">Solutions</Link>
-            <Link href="#pricing">Pricing</Link>
-            <Link href="#faq">FAQ</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-primaryText">Log in</Link>
-            <Button asChild variant="primary" size="sm"><Link href="/register">Get started</Link></Button>
-          </div>
-        </nav>
-      </header>
+      <MarketingNav />
 
       <main className="relative z-10 mx-auto max-w-7xl space-y-20 px-6 pb-20">
         <section className="grid items-center gap-10 rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl md:grid-cols-[1.2fr_0.8fr] md:p-12">
@@ -71,9 +56,9 @@ export default function MarketingPage() {
             </div>
             <h1 className="max-w-xl text-4xl leading-tight md:text-6xl">{APP_TAGLINE}</h1>
             <p className="mt-5 max-w-xl text-lg text-secondaryText">{APP_SUPPORTING_MESSAGE}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg"><Link href="/register">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-              <Button asChild variant="secondary" size="lg"><Link href="#platform">Explore the platform</Link></Button>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button asChild size="lg" className="w-full sm:w-auto"><Link href="/register">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto"><Link href="#platform">Explore the platform</Link></Button>
             </div>
             <div className="mt-8 flex items-center gap-3 text-sm text-secondaryText">
               <CheckCircle2 className="h-4 w-4 text-[#16A36A]" />
@@ -106,7 +91,7 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="platform" className="space-y-8">
+        <section id="platform" className="scroll-mt-24 space-y-8">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-secondaryText">Main value proposition</p>
             <h2 className="mt-3 text-3xl">A more flexible webinar platform for modern growth teams</h2>
@@ -135,7 +120,7 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="solutions" className="rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <section id="solutions" className="scroll-mt-24 rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-secondaryText">How it works</p>
             <h2 className="mt-3 text-3xl">From source to sales in a few steps</h2>
@@ -184,7 +169,7 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="pricing" className="rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <section id="pricing" className="scroll-mt-24 rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-secondaryText">Illustrative pricing</p>
             <h2 className="mt-3 text-3xl">Simple plans for teams at every stage</h2>
@@ -209,7 +194,7 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="faq" className="space-y-6">
+        <section id="faq" className="scroll-mt-24 space-y-6">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-secondaryText">FAQ</p>
             <h2 className="mt-3 text-3xl">Common questions</h2>

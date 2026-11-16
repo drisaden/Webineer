@@ -50,7 +50,7 @@ export default async function LandingPagesPage() {
                 </p>
               </div>
 
-              <Link href={`/dashboard/webinars/${webinar.id}/landing-page`} className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#17294B]">
+              <Link href={`/dashboard/webinars/${webinar.id}/landing-page`} className="tap mt-3 gap-2 text-sm font-medium text-[#17294B] md:mt-5">
                 Design page <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

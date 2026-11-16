@@ -29,7 +29,7 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
       <header className="sticky top-0 z-20 border-b border-white/60 bg-white/70 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
           <button
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl md:h-10 md:w-10 border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)] lg:hidden"
             aria-label="Open menu"
             onClick={() => setShowMobileMenu((value) => !value)}
           >
@@ -44,11 +44,11 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]" aria-label="Toggle theme" onClick={toggleTheme}>
+            <button className="inline-flex h-11 w-11 items-center justify-center rounded-xl md:h-10 md:w-10 border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]" aria-label="Toggle theme" onClick={toggleTheme}>
               {dark ? <SunMedium className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl md:h-10 md:w-10 border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
               aria-label="Help center"
               onClick={() => {
                 setShowHelp((value) => !value);
@@ -58,7 +58,7 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
               <HelpCircle className="h-4 w-4" />
             </button>
             <button
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl md:h-10 md:w-10 border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
               aria-label={hasUnread ? `Notifications, ${unread} unread` : "Notifications"}
               data-testid="notifications-button"
               onClick={() => {

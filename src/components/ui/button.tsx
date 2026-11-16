@@ -20,8 +20,8 @@ export function Button({
     variant === "primary" && "bg-gradient-to-r from-[#041B5E] via-[#0A1E6A] to-[#0D2F8D] text-white shadow-[0_16px_32px_rgba(4,27,94,0.22)] hover:shadow-[0_20px_40px_rgba(4,27,94,0.28)]",
     variant === "secondary" && "border border-white/60 bg-white/70 text-primaryText shadow-[0_10px_25px_rgba(15,23,42,0.08)] backdrop-blur-md hover:bg-white/85",
     variant === "ghost" && "bg-transparent text-primaryText hover:bg-[#EEF5FF]",
-    size === "sm" && "h-9 px-3 text-sm",
-    size === "md" && "h-10 px-4 text-sm",
+    size === "sm" && "h-11 px-4 text-sm md:h-9 md:px-3",
+    size === "md" && "h-11 px-4 text-sm md:h-10",
     size === "lg" && "h-12 px-5 text-base",
     className,
   );

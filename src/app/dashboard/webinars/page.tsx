@@ -17,10 +17,10 @@ export default async function WebinarListPage() {
     <DashboardShell title="All Webinars">
       <div className="space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-white px-3 py-2.5">
+          <label className="flex flex-1 cursor-text items-center gap-3 rounded-xl border border-border bg-white px-3 py-0 md:py-2.5">
             <Search className="h-4 w-4 text-secondaryText" />
-            <input placeholder="Search webinars..." className="w-full bg-transparent text-sm outline-none" />
-          </div>
+            <input aria-label="Search webinars" placeholder="Search webinars..." className="min-h-11 w-full bg-transparent text-sm outline-none md:min-h-0" />
+          </label>
           <div className="flex items-center gap-3">
             <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-medium text-primaryText">
               <SlidersHorizontal className="h-4 w-4" />
@@ -58,7 +58,7 @@ export default async function WebinarListPage() {
                 <div className="mt-5 flex items-center justify-between">
                   <span className="text-sm text-secondaryText">{webinar.registrationCount} registrations</span>
                   <div className="flex items-center gap-2">
-                    <Link href={webinar.status === "draft" ? `/dashboard/webinars/${webinar.id}/setup` : `/dashboard/webinars/${webinar.id}`} className="text-sm font-medium text-[#17294B] hover:underline">
+                    <Link href={webinar.status === "draft" ? `/dashboard/webinars/${webinar.id}/setup` : `/dashboard/webinars/${webinar.id}`} className="tap text-sm font-medium text-[#17294B] hover:underline">
                       {webinar.status === "draft" ? "Continue setup" : "Manage"}
                     </Link>
                     {webinar.slug && webinar.status !== "draft" && (

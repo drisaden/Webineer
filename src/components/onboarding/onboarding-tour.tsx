@@ -136,7 +136,7 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
         className="tour-card absolute rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-[0_24px_60px_rgba(4,27,94,0.35)] outline-none"
         style={cardStyle}
       >
-        <button type="button" onClick={() => finish(false)} aria-label="Skip tour" className="absolute right-3 top-3 rounded-full p-1.5 text-secondaryText hover:bg-[#EEF5FF]">
+        <button type="button" onClick={() => finish(false)} aria-label="Skip tour" className="tap-icon absolute right-1.5 top-1.5 rounded-full p-1.5 text-secondaryText hover:bg-[#EEF5FF] md:right-3 md:top-3">
           <X className="h-4 w-4" />
         </button>
         <span className="tour-icon inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF5] text-[#0F7B52]">
@@ -153,7 +153,7 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">
-          <button type="button" onClick={() => finish(false)} className="text-sm font-medium text-secondaryText hover:text-primaryText">
+          <button type="button" onClick={() => finish(false)} className="tap -ml-2 px-2 text-sm font-medium text-secondaryText hover:text-primaryText">
             {last ? "Close" : "Skip tour"}
           </button>
           <div className="flex items-center gap-2">

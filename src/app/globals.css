@@ -243,6 +243,12 @@ body.dark .glass-panel {
   border-color: color-mix(in srgb, currentColor 16%, transparent);
 }
 
+/* Phone-sized tap target for text links and small controls (44px, the recommended minimum). Desktop keeps its compact look. */
+@media (max-width: 767px) {
+  .tap { display: inline-flex; align-items: center; min-height: 2.75rem; }
+  .tap-icon { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; min-width: 2.75rem; }
+}
+
 /* Brand logo colours. "auto" follows the theme; onDark/onLight stay fixed for surfaces that never change. */
 [data-logo-tone] .logo-glyph { stroke: #0AEBCB; }
 [data-logo-tone] .logo-tile { fill: #041B5E; }

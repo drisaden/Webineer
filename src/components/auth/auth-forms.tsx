@@ -40,8 +40,8 @@ function PasswordInput({ id, name, autoComplete, state, placeholder }: { id: str
   return (
     <div className="relative">
       <LockKeyhole className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-secondaryText" aria-hidden />
-      <input id={id} name={name} className="input-field pl-10 pr-10" type={show ? "text" : "password"} autoComplete={autoComplete} placeholder={placeholder} required maxLength={200} {...invalid(state, name)} />
-      <button type="button" className="absolute right-3 top-3.5 text-secondaryText" onClick={() => setShow((v) => !v)} aria-label={show ? "Hide password" : "Show password"}>
+      <input id={id} name={name} className="input-field pl-10 pr-12" type={show ? "text" : "password"} autoComplete={autoComplete} placeholder={placeholder} required maxLength={200} {...invalid(state, name)} />
+      <button type="button" className="absolute right-0 top-0 inline-flex h-full w-11 items-center justify-center text-secondaryText" onClick={() => setShow((v) => !v)} aria-label={show ? "Hide password" : "Show password"}>
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
     </div>
@@ -65,7 +65,7 @@ export function LoginForm({ next, demo }: { next: string; demo: boolean }) {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-medium text-primaryText">Password</label>
-          <Link href="/forgot-password" className="text-sm text-[#17294B]">Forgot password?</Link>
+          <Link href="/forgot-password" className="tap text-sm text-[#17294B]">Forgot password?</Link>
         </div>
         <PasswordInput id="password" name="password" autoComplete="current-password" state={state} />
         <FieldError state={state} name="password" />

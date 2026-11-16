@@ -18,7 +18,7 @@ export function DesignedRegistrationPage({ view, design, preview, source }: { vi
       )}
       <header className="mx-auto mb-8 flex max-w-6xl items-center justify-between">
         <Logo tone="onLight" className="h-9 w-auto" />
-        <Link href="/" className="text-sm font-medium opacity-70">
+        <Link href="/" className="tap text-sm font-medium opacity-70">
           Back to homepage
         </Link>
       </header>

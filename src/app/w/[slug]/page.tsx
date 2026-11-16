@@ -53,7 +53,7 @@ export default async function WebinarRegistrationPage({
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
           <Logo tone="onLight" className="h-9 w-auto" />
-          <Link href="/" className="text-sm font-medium text-secondaryText">Back to homepage</Link>
+          <Link href="/" className="tap text-sm font-medium text-secondaryText">Back to homepage</Link>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">

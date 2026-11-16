@@ -121,7 +121,7 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
             <div className="border-b border-white/20 px-5 py-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg">Upcoming webinars</h3>
-                <Link href="/dashboard/webinars/upcoming" className="text-sm font-medium text-[#17294B] hover:underline">View all</Link>
+                <Link href="/dashboard/webinars/upcoming" className="tap text-sm font-medium text-[#17294B] hover:underline">View all</Link>
               </div>
             </div>
             <div className="divide-y divide-border">

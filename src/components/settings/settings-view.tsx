@@ -81,7 +81,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
           </div>
           <div className="mt-4 space-y-2 border-t border-border pt-4">
             {quickLinks.map((link) => (
-              <a key={link.href} href={link.href} className="block rounded-xl border border-border px-3 py-2 text-sm font-medium text-secondaryText hover:bg-[#F7F9FC]">
+              <a key={link.href} href={link.href} className="flex min-h-11 items-center rounded-xl border border-border px-3 py-2 text-sm font-medium text-secondaryText hover:bg-[#F7F9FC]">
                 {link.label}
               </a>
             ))}

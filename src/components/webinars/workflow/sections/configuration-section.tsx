@@ -88,7 +88,7 @@ export function ConfigurationSection({ draft, update, issues, showErrors, goTo, 
             <button
               type="button"
               onClick={() => set("presenters", [...c.presenters, { id: randomId("pr", 6), name: "", title: "", bio: "", avatarUrl: "" }])}
-              className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#9FB3D1] px-3 py-2 text-sm font-medium text-[#17294B] hover:bg-[#F7F9FC]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-[#9FB3D1] px-3 py-2 text-sm font-medium text-[#17294B] hover:bg-[#F7F9FC] md:min-h-0"
             >
               <Plus className="h-4 w-4" /> Add presenter
             </button>
