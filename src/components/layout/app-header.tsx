@@ -6,12 +6,7 @@ import Link from "next/link";
 import { readThemePreference, subscribeTheme, writeThemePreference } from "@/components/layout/theme-sync";
 import { Sidebar } from "@/components/layout/sidebar";
 import { AccountMenu } from "@/components/auth/account-menu";
-
-const notifications = [
-  { title: "Launch reminder sent", detail: "3 contacts received the event reminder" },
-  { title: "Payment confirmed", detail: "Your webinar package renewed successfully" },
-  { title: "Automation step queued", detail: "Follow-up email is scheduled for 2:30 PM" },
-];
+import { timeAgo, useNotifications } from "@/components/layout/use-notifications";
 
 const helpItems = [
   "Create a webinar with your preferred provider",
@@ -20,6 +15,8 @@ const helpItems = [
 ];
 
 export function AppHeader({ title = "Overview" }: { title?: string }) {
+  const { items: notifications, unread, loaded, failed, markRead } = useNotifications();
+  const hasUnread = unread > 0;
   const dark = useSyncExternalStore(subscribeTheme, readThemePreference, () => false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -61,14 +58,25 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
               <HelpCircle className="h-4 w-4" />
             </button>
             <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
-              aria-label="Notifications"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/60 bg-white/75 text-primaryText shadow-[0_10px_20px_rgba(15,23,42,0.03)]"
+              aria-label={hasUnread ? `Notifications, ${unread} unread` : "Notifications"}
+              data-testid="notifications-button"
               onClick={() => {
-                setShowNotifications((value) => !value);
+                const opening = !showNotifications;
+                setShowNotifications(opening);
                 setShowHelp(false);
+                if (opening && hasUnread) void markRead();
               }}
             >
               <Bell className="h-4 w-4" />
+              {hasUnread && (
+                <span
+                  data-testid="notifications-unread-dot"
+                  aria-hidden
+                  className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#E5484D]"
+                  style={{ boxShadow: "0 0 0 2px var(--background)" }}
+                />
+              )}
             </button>
             <AccountMenu />
           </div>
@@ -81,12 +89,26 @@ export function AppHeader({ title = "Overview" }: { title?: string }) {
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-secondaryText">Notifications</h3>
             <button className="text-xs font-medium text-primaryText" onClick={() => setShowNotifications(false)}>Close</button>
           </div>
-          <div className="space-y-3">
+          <div className="max-h-[26rem] space-y-3 overflow-y-auto" data-testid="notifications-list">
+            {!loaded && <p className="text-sm text-secondaryText">Loading…</p>}
+            {loaded && failed && notifications.length === 0 && <p className="text-sm text-secondaryText">Couldn&apos;t load notifications. They&apos;ll refresh automatically.</p>}
+            {loaded && !failed && notifications.length === 0 && (
+              <p className="rounded-2xl border border-border bg-[#F7F9FC] p-3 text-sm text-secondaryText">You&apos;re all caught up. New registrations, payments, failed emails and webinars about to start will show up here.</p>
+            )}
             {notifications.map((item) => (
-              <div key={item.title} className="rounded-2xl border border-border bg-[#F7F9FC] p-3">
-                <p className="text-sm font-medium text-primaryText">{item.title}</p>
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => setShowNotifications(false)}
+                data-kind={item.kind}
+                className="block rounded-2xl border border-border bg-[#F7F9FC] p-3 hover:border-[#9FB3D1]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium text-primaryText">{item.title}</p>
+                  <span className="shrink-0 text-[11px] text-secondaryText">{timeAgo(item.at)}</span>
+                </div>
                 <p className="mt-1 text-xs text-secondaryText">{item.detail}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

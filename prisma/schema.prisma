@@ -219,6 +219,8 @@ model User {
   lastSignInAt    DateTime?  @map("last_sign_in_at") @db.Timestamptz(6)
   /// Set when the user finishes or skips the first-run product tour.
   onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
+  /// Everything in the notification bell older than this counts as read (synced across the user's devices).
+  notificationsSeenAt   DateTime? @map("notifications_seen_at") @db.Timestamptz(6)
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
