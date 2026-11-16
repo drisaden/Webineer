@@ -234,7 +234,7 @@ describe("Supabase send-email hook", () => {
   test("signup and recovery links land on /auth/confirm with a safe next path", () => {
     const [signup] = planAuthEmails({ user: { email: "ada@example.com", user_metadata: { full_name: "Ada" } }, email_data: { email_action_type: "signup", token_hash: "th_1", redirect_to: `${app}/auth/confirm?next=/dashboard` } }, app);
     assert.equal(signup.to, "ada@example.com");
-    assert.equal(signup.subject, "Confirm your Webineer account");
+    assert.equal(signup.subject, "Ada, confirm your Webineer account");
     assert.ok(signup.text.includes(`${app}/auth/confirm?token_hash=th_1&type=signup&next=%2Fdashboard`));
     const [recovery] = planAuthEmails({ user: { email: "ada@example.com" }, email_data: { email_action_type: "recovery", token_hash: "th_2", redirect_to: `${app}/auth/confirm?next=/reset-password` } }, app);
     assert.ok(recovery.text.includes("type=recovery&next=%2Freset-password"));
@@ -254,6 +254,22 @@ describe("Supabase send-email hook", () => {
     assert.ok(code.html.includes("482913") && !code.text.includes("http"));
     const [notice] = planAuthEmails({ user: { email: "new@example.com" }, email_data: { email_action_type: "email_changed_notification", old_email: "old@example.com" } }, app);
     assert.equal(notice.to, "old@example.com");
+  });
+
+  test("auth emails greet the user by first name and mention the workspace on sign-up", () => {
+    const [signup] = planAuthEmails({ user: { email: "ada@example.com", user_metadata: { full_name: "Ada Lovelace", workspace_name: "Analytical Engines" } }, email_data: { email_action_type: "signup", token_hash: "h1" } }, app);
+    assert.ok(signup.html.includes("Hi Ada,") && signup.text.includes("Hi Ada,"));
+    assert.ok(signup.html.includes("Analytical Engines") && signup.text.includes("Analytical Engines"));
+    assert.equal(signup.subject, "Ada, confirm your Webineer account");
+    const [reset] = planAuthEmails({ user: { email: "ada@example.com", user_metadata: { full_name: "Ada Lovelace", workspace_name: "Analytical Engines" } }, email_data: { email_action_type: "recovery", token_hash: "h2" } }, app);
+    assert.ok(reset.html.includes("Hi Ada,") && !reset.html.includes("Analytical Engines"));
+    assert.equal(reset.subject, "Ada, reset your Webineer password");
+    const [anon] = planAuthEmails({ user: { email: "x@example.com" }, email_data: { email_action_type: "signup", token_hash: "h3" } }, app);
+    assert.ok(anon.html.includes("Hi there,") && anon.subject === "Confirm your Webineer account");
+    const [hostile] = planAuthEmails({ user: { email: "x@example.com", user_metadata: { full_name: "<script>alert(1)</script> Bo", workspace_name: "<img src=x>" } }, email_data: { email_action_type: "signup", token_hash: "h4" } }, app);
+    assert.ok(!hostile.html.includes("<script>") && !hostile.html.includes("<img src=x>"));
+    const [emailAsName] = planAuthEmails({ user: { email: "x@example.com", user_metadata: { full_name: "x@example.com" } }, email_data: { email_action_type: "signup", token_hash: "h5" } }, app);
+    assert.ok(emailAsName.html.includes("Hi there,"));
   });
 
   test("auth templates escape and include a text part", () => {

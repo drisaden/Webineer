@@ -36,7 +36,7 @@ export function verifyStandardWebhook(body: string, headers: Headers, secrets: B
 }
 
 export interface HookPayload {
-  user: { id?: string; email?: string; new_email?: string; email_new?: string; user_metadata?: { full_name?: string; name?: string } };
+  user: { id?: string; email?: string; new_email?: string; email_new?: string; user_metadata?: { full_name?: string; name?: string; first_name?: string; workspace_name?: string } };
   email_data: { token?: string; token_hash?: string; redirect_to?: string; email_action_type?: string; site_url?: string; token_new?: string; token_hash_new?: string; old_email?: string };
 }
 
@@ -68,14 +68,15 @@ function nextPathFrom(redirectTo: string | undefined, appUrl: string): string {
 export function planAuthEmails(payload: HookPayload, appUrl: string): PlannedEmail[] {
   const { user, email_data: d } = payload;
   const type = d.email_action_type ?? "";
-  const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? null;
+  const meta = user.user_metadata ?? {};
+  const name = meta.full_name?.trim() || meta.name?.trim() || meta.first_name?.trim() || null;
   const next = nextPathFrom(d.redirect_to, appUrl);
   const link = (hash: string | undefined, linkType: string) =>
     hash ? `${appUrl}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=${encodeURIComponent(linkType)}&next=${encodeURIComponent(next)}` : undefined;
   const make = (to: string | undefined, action: AuthEmailAction, opts: { link?: string; code?: string }): PlannedEmail[] => {
     if (!to) return [];
     const expiresHint = opts.link ? "For your security this link can be used once and expires soon." : undefined;
-    return [{ to, toName: name, action, ...renderAuthEmail(action, { ...opts, expiresHint }) }];
+    return [{ to, toName: name, action, ...renderAuthEmail(action, { ...opts, expiresHint, name, workspaceName: meta.workspace_name }) }];
   };
   const newEmail = user.new_email ?? user.email_new;
 

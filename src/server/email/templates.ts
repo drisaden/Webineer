@@ -32,10 +32,22 @@ const AUTH_COPY: Record<AuthEmailAction, { subject: string; heading: string; int
 
 export const AUTH_ACTIONS = Object.keys(AUTH_COPY) as AuthEmailAction[];
 
-export function renderAuthEmail(action: AuthEmailAction, opts: { link?: string; code?: string; expiresHint?: string }): RenderedEmail {
+/** First name for greetings: the first word of the saved name, trimmed and capped. Never an email address. */
+export function firstNameOf(name: string | null | undefined): string | null {
+  const first = (name ?? "").trim().split(/\s+/)[0]?.slice(0, 40) ?? "";
+  return first && !first.includes("@") ? first : null;
+}
+
+export function renderAuthEmail(action: AuthEmailAction, opts: { link?: string; code?: string; expiresHint?: string; name?: string | null; workspaceName?: string | null }): RenderedEmail {
   const c = AUTH_COPY[action];
-  const parts = [`<h1 style="margin:0 0 16px;font-size:22px;color:#101B35;">${escapeHtml(c.heading)}</h1>`, `<p>${escapeHtml(c.intro)}</p>`];
-  const text = [c.heading, "", c.intro];
+  const first = firstNameOf(opts.name);
+  const greeting = `Hi ${first ?? "there"},`;
+  // Only the sign-up email mentions the workspace, because that is the only one sent before the account is usable.
+  const workspace = action === "signup" && opts.workspaceName?.trim() ? opts.workspaceName.trim().slice(0, 80) : null;
+  const intro = workspace ? `${c.intro} Your workspace, ${workspace}, will be ready as soon as you do.` : c.intro;
+  const subject = first && (action === "signup" || action === "recovery") ? `${first}, ${c.subject.charAt(0).toLowerCase()}${c.subject.slice(1)}` : c.subject;
+  const parts = [`<h1 style="margin:0 0 16px;font-size:22px;color:#101B35;">${escapeHtml(c.heading)}</h1>`, `<p>${escapeHtml(greeting)}</p>`, `<p>${escapeHtml(intro)}</p>`];
+  const text = [c.heading, "", greeting, "", intro];
   if (opts.code) {
     parts.push(`<p style="font-size:28px;font-weight:bold;letter-spacing:6px;text-align:center;margin:24px 0;">${escapeHtml(opts.code)}</p>`);
     text.push("", opts.code);
@@ -50,7 +62,7 @@ export function renderAuthEmail(action: AuthEmailAction, opts: { link?: string; 
   }
   parts.push(`<p style="font-size:13px;color:#64748B;">${escapeHtml(c.outro)}</p>`);
   text.push("", c.outro);
-  return { subject: c.subject, html: renderLayout({ contentHtml: parts.join("\n"), preheader: c.intro }), text: text.join("\n") };
+  return { subject, html: renderLayout({ contentHtml: parts.join("\n"), preheader: intro }), text: text.join("\n") };
 }
 
 const SYMBOLS: Record<string, string> = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
