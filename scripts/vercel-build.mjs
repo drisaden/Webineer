@@ -2,9 +2,29 @@
 // Production deploys apply pending database migrations first (never previews,
 // so an unmerged branch can't change the live database). Without a database
 // URL the migration step is skipped and the app still builds.
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 
-const run = (cmd) => execSync(cmd, { stdio: "inherit", env: process.env });
+const run = (cmd) => {
+  const result = spawnSync(cmd, {
+    shell: true,
+    stdio: ["inherit", "pipe", "pipe"],
+    encoding: "utf8",
+    env: process.env,
+  });
+
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`Command failed (${result.status ?? "unknown"}): ${cmd}`);
+  }
+};
+
 const hasDb = Boolean(process.env.DIRECT_URL || process.env.DATABASE_URL);
 
 if (process.env.VERCEL_ENV === "production" && hasDb) {
