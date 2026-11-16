@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Archive, BarChart3, Bell, CalendarClock, CreditCard, FileText, HelpCircle, LayoutGrid, MessageSquareText, Plug, Settings, Sparkles, Users, Video, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/constants/site";
+import { Logo } from "@/components/brand/logo";
 
 const nav = [
   { label: "Overview", href: "/dashboard", icon: LayoutGrid },
@@ -36,7 +37,7 @@ export function Sidebar({ mobile = false }: { mobile?: boolean }) {
   return (
     <aside className={mobile ? "flex h-full w-full flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:hidden" : "sticky top-0 hidden h-screen w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:flex"}>
       <div className="mb-8 flex items-center gap-3 px-2">
-        <img src="/brand/logo-dark.svg" alt={`${APP_NAME} logo`} className="h-9 w-auto" />
+        <Logo tone="onDark" className="h-9 w-auto" title={APP_NAME} />
       </div>
 
       <div className="space-y-6 overflow-y-auto pr-1">

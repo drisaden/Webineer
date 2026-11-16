@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -7,7 +8,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img src="/brand/webineer-logo.svg" alt="Webineer logo" className="h-9 w-auto" />
+            <Logo tone="auto" className="h-9 w-auto" />
           </Link>
           <Link href="/" className="text-sm font-medium text-secondaryText">Back to homepage</Link>
         </header>

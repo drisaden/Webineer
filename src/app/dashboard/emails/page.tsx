@@ -91,7 +91,7 @@ export default async function EmailsPage() {
                     <Badge label={log.status} tone={log.status === "simulated" ? "info" : tone(log.status)} />
                   </div>
                   <p className="mt-1 text-sm text-secondaryText">{log.name} &lt;{log.email}&gt;</p>
-                  {log.error && log.status !== "sent" && <p className="mt-1 text-xs text-[#B87514]">{log.error}{log.attempts ? ` · attempt ${log.attempts}` : ""}</p>}
+                  {log.error && log.status !== "sent" && <p className="mt-1 text-xs text-[#8A5A0E]">{log.error}{log.attempts ? ` · attempt ${log.attempts}` : ""}</p>}
                 </div>
                 <div className="text-sm text-secondaryText">
                   <p>{log.subject}</p>

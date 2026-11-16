@@ -107,7 +107,7 @@ export default async function WebinarDetailPage({
               {webinar.slug && (
                 <div className="mt-6 pt-4 border-t border-border">
                   <p className="text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Public Registration URL</p>
-                  <Link href={`/w/${webinar.slug}`} className="block truncate text-sm font-medium text-[#16D6B2] hover:underline">
+                  <Link href={`/w/${webinar.slug}`} className="block truncate text-sm font-medium text-[#0A7F6B] hover:underline">
                     /w/{webinar.slug}
                   </Link>
                 </div>

@@ -7,6 +7,7 @@ import { getStore } from "@/server/repositories";
 import { getCurrentUser, canManageWebinar } from "@/lib/auth/demo-session";
 import { publicViewFor } from "@/services/registration-service";
 import { ConfiguredRegistrationPage } from "@/components/registration/configured-registration-page";
+import { Logo } from "@/components/brand/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -51,10 +52,7 @@ export default async function WebinarRegistrationPage({
     <main className="min-h-screen bg-[#F7F9FC] px-4 py-8 text-primaryText md:px-6">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#101B35] text-sm font-bold text-white">W</div>
-            <div className="text-lg font-semibold">Webineer</div>
-          </div>
+          <Logo tone="onLight" className="h-9 w-auto" />
           <Link href="/" className="text-sm font-medium text-secondaryText">Back to homepage</Link>
         </header>
 

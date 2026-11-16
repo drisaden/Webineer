@@ -1,7 +1,1 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">Webineer icon</title>
-  <desc id="desc">Standalone Webineer icon featuring the W monogram on a navy rounded square.</desc>
-  <rect width="512" height="512" rx="128" fill="#041B5E"/>
-  <path d="M112 320L192 160L256 288L320 160L400 320" stroke="#0AEBCB" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M84 364H428" stroke="#0AEBCB" stroke-width="18" stroke-linecap="round" opacity="0.32"/>
-</svg>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t"><title id="t">Webineer icon</title><g transform="translate(0 0) scale(3.2)"><rect width="160" height="160" rx="133" fill="#041B5E"/><path d="M32 52L60 114L80 72L100 114L128 52" stroke="#0AEBCB" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></g></svg>

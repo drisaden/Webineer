@@ -242,3 +242,119 @@ body.dark .glass-panel {
 .tint-border {
   border-color: color-mix(in srgb, currentColor 16%, transparent);
 }
+
+/* Brand logo colours. "auto" follows the theme; onDark/onLight stay fixed for surfaces that never change. */
+[data-logo-tone] .logo-glyph { stroke: #0AEBCB; }
+[data-logo-tone] .logo-tile { fill: #041B5E; }
+[data-logo-tone] .logo-letters { fill: #041B5E; }
+[data-logo-tone] .logo-dot { fill: #08B9A0; }
+body.dark [data-logo-tone="auto"] .logo-tile,
+[data-logo-tone="onDark"] .logo-tile { fill: #0AEBCB; }
+body.dark [data-logo-tone="auto"] .logo-glyph,
+[data-logo-tone="onDark"] .logo-glyph { stroke: #041B5E; }
+body.dark [data-logo-tone="auto"] .logo-letters,
+[data-logo-tone="onDark"] .logo-letters { fill: #F5FAFF; }
+body.dark [data-logo-tone="auto"] .logo-dot,
+[data-logo-tone="onDark"] .logo-dot { fill: #0AEBCB; }
+
+/* ------------------------------------------------------------------------------------------
+   Dark theme: remap the light-only utility colours used across components.
+   The app shell flips --foreground to near-white in dark mode, so every hard-coded light surface
+   (white cards, pale tints, light inputs) has to flip too or its text becomes unreadable.
+   Selectors match the exact Tailwind class tokens so one rule covers every component.
+   ------------------------------------------------------------------------------------------ */
+body.dark { color-scheme: dark; }
+
+/* Surfaces */
+body.dark [class~="bg-white"]:not(.light-scope *),
+body.dark [class~="hover:bg-white"]:hover:not(.light-scope *) { background-color: #0f1b30; }
+body.dark [class~="bg-white/70"]:not(.light-scope *),
+body.dark [class~="bg-white/75"]:not(.light-scope *) { background-color: rgba(15, 27, 48, 0.78); }
+body.dark [class~="bg-white/80"]:not(.light-scope *),
+body.dark [class~="bg-white/90"]:not(.light-scope *) { background-color: rgba(15, 27, 48, 0.9); }
+body.dark [class~="bg-[#F7F9FC]"]:not(.light-scope *),
+body.dark [class~="hover:bg-[#F7F9FC]"]:hover:not(.light-scope *) { background-color: #0b1626; }
+body.dark [class~="bg-[#F7F9FC]/80"]:not(.light-scope *) { background-color: rgba(11, 22, 38, 0.8); }
+body.dark [class~="bg-[#EEF2F7]"]:not(.light-scope *),
+body.dark [class~="hover:bg-[#EEF2F7]"]:hover:not(.light-scope *),
+body.dark [class~="bg-[#EEF5FF]"]:not(.light-scope *),
+body.dark [class~="hover:bg-[#EEF5FF]"]:hover:not(.light-scope *) { background-color: #17263f; }
+body.dark [class~="bg-[#EAFBF5]"]:not(.light-scope *) { background-color: rgba(22, 214, 178, 0.14); }
+body.dark [class~="bg-[#FFF6F6]"]:not(.light-scope *),
+body.dark [class~="hover:bg-[#FFF6F6]"]:hover:not(.light-scope *) { background-color: rgba(220, 83, 83, 0.14); }
+body.dark [class~="bg-[#FFF8EA]"]:not(.light-scope *) { background-color: rgba(231, 162, 59, 0.14); }
+body.dark .input-field:not(.light-scope *),
+body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]):not(.light-scope *),
+body.dark select:not(.light-scope *),
+body.dark textarea:not(.light-scope *) { background-color: #0b1626; border-color: rgba(148, 163, 184, 0.28); color: var(--foreground); }
+body.dark input.bg-transparent:not(.light-scope *) { background-color: transparent; }
+body.dark .input-field:not(.light-scope *)::placeholder,
+body.dark input:not(.light-scope *)::placeholder,
+body.dark textarea:not(.light-scope *)::placeholder { color: #8fa0c4; opacity: 1; }
+body.dark .input-field:focus:not(.light-scope *) { border-color: rgba(10, 235, 203, 0.8); box-shadow: 0 0 0 3px rgba(10, 235, 203, 0.18); }
+body.dark option:not(.light-scope *) { background-color: #0f1b30; color: #eef6ff; }
+
+/* Borders and dividers */
+body.dark .border-border:not(.light-scope *),
+body.dark [class~="border-white/60"]:not(.light-scope *) { border-color: rgba(148, 163, 184, 0.22); }
+body.dark .divide-border > :not([hidden]) ~ :not([hidden]):not(.light-scope *) { border-color: rgba(148, 163, 184, 0.22); }
+body.dark [class~="border-[#F5D7D7]"]:not(.light-scope *) { border-color: rgba(220, 83, 83, 0.4); }
+body.dark [class~="border-[#F5E1BC]"]:not(.light-scope *) { border-color: rgba(231, 162, 59, 0.4); }
+body.dark [class~="border-[#BDEBD6]"]:not(.light-scope *),
+body.dark [class~="border-[#D9F7EC]"]:not(.light-scope *),
+body.dark [class~="border-[#D9F5EC]"]:not(.light-scope *),
+body.dark [class~="border-[#D6E6FB]"]:not(.light-scope *) { border-color: rgba(148, 163, 184, 0.24); }
+body.dark [class~="border-[#9FB3D1]"]:not(.light-scope *),
+body.dark [class~="hover:border-[#9FB3D1]"]:hover:not(.light-scope *) { border-color: rgba(148, 163, 184, 0.45); }
+
+/* Text on those surfaces */
+body.dark [class~="text-[#17294B]"]:not([class~="bg-[#0AEBCB]"]):not([class~="bg-[#16D6B2]"]):not(.light-scope *),
+body.dark [class~="text-[#041B5E]"]:not([class~="bg-[#0AEBCB]"]):not([class~="bg-[#16D6B2]"]):not(.light-scope *) { color: #eef6ff; }
+body.dark [class~="text-[#172033]"]:not(.light-scope *),
+body.dark [class~="text-[#0F5C3E]"]:not(.light-scope *) { color: #eef6ff; }
+body.dark [class~="text-[#0F5C3E]"]:not(.light-scope *) { color: #5fe3b4; }
+body.dark [class~="text-[#42526A]"]:not(.light-scope *),
+body.dark [class~="text-[#64748B]"]:not(.light-scope *) { color: var(--muted); }
+body.dark [class~="text-[#0F7B52]"]:not(.light-scope *),
+body.dark [class~="text-[#11724B]"]:not(.light-scope *),
+body.dark [class~="text-[#16A36A]"]:not(.light-scope *),
+body.dark [class~="text-[#0A7F6B]"]:not(.light-scope *) { color: #5fe3b4; }
+body.dark [class~="text-[#B33A3A]"]:not(.light-scope *) { color: #ff9d9d; }
+body.dark [class~="text-[#8A5A0E]"]:not(.light-scope *),
+body.dark [class~="text-[#8A5A0E]"]:not(.light-scope *) { color: #f3c377; }
+body.dark [class~="text-[#2457AA]"]:not(.light-scope *),
+body.dark [class~="text-[#2F5E9E]"]:not(.light-scope *) { color: #8fbcf7; }
+/* Muted links/buttons that were navy on a light fill */
+body.dark a.underline:not(.light-scope *) { text-decoration-color: currentColor; }
+
+/* More light surfaces */
+body.dark [class~="bg-white/65"]:not(.light-scope *) { background-color: rgba(15, 27, 48, 0.72); }
+body.dark [class~="bg-white/95"]:not(.light-scope *),
+body.dark [class~="hover:bg-white/85"]:hover:not(.light-scope *) { background-color: rgba(15, 27, 48, 0.95); }
+body.dark [class~="bg-[#F2F7FE]"]:not(.light-scope *) { background-color: #12213a; }
+body.dark [class~="bg-[#FFF3DE]"]:not(.light-scope *) { background-color: rgba(231, 162, 59, 0.16); }
+body.dark [class~="bg-[#E9F2FF]"]:not(.light-scope *) { background-color: rgba(57, 133, 219, 0.18); }
+body.dark [class~="bg-[#E4E9F1]"]:not(.light-scope *),
+body.dark [class~="bg-[#CBD5E1]"]:not(.light-scope *) { background-color: rgba(148, 163, 184, 0.28); }
+body.dark [class~="border-white/50"]:not(.light-scope *),
+body.dark [class~="border-white/70"]:not(.light-scope *) { border-color: rgba(148, 163, 184, 0.22); }
+body.dark [class~="border-[#BFEBD9]"]:not(.light-scope *),
+body.dark [class~="border-[#C9D5E6]"]:not(.light-scope *),
+body.dark [class~="border-[#D6DEEA]"]:not(.light-scope *) { border-color: rgba(148, 163, 184, 0.26); }
+
+/* The navy primary button disappears on a dark page, so lift it to a brighter blue with a visible edge. */
+body.dark [class~="from-[#041B5E]"][class~="bg-gradient-to-r"]:not(.light-scope *) {
+  background-image: linear-gradient(90deg, #1b45c9, #2a5be0);
+  border: 1px solid rgba(143, 188, 247, 0.35);
+  color: #fff;
+}
+
+/* Customer pages shown inside the app (e.g. the designer canvas) stay light: reset the theme variables and skip every dark remap above. */
+body.dark .light-scope {
+  color-scheme: light;
+  --foreground: #041B5E;
+  --primary: #041B5E;
+  --muted: #4D5C8A;
+  --border: rgba(82, 104, 164, 0.18);
+  --surface: rgba(255, 255, 255, 0.72);
+}

@@ -112,7 +112,7 @@ export function WorkflowTimeline({
                     "relative flex h-9 w-9 items-center justify-center rounded-full border-2 bg-white transition-colors",
                     isActive && "border-[#041B5E] text-[#041B5E] shadow-[0_0_0_4px_rgba(4,27,94,0.08)]",
                     !isActive && state === "completed" && "border-[#16D6B2] bg-[#EAFBF5] text-[#0F7B52]",
-                    !isActive && state === "attention" && "border-[#E7A23B] bg-[#FFF8EA] text-[#B87514]",
+                    !isActive && state === "attention" && "border-[#E7A23B] bg-[#FFF8EA] text-[#8A5A0E]",
                     !isActive && state === "incomplete" && "border-[#D6DEEA] text-[#64748B]",
                   )}
                 >
@@ -133,7 +133,7 @@ export function WorkflowTimeline({
                   className={cn(
                     "text-[10px] leading-none",
                     state === "completed" && "text-[#0F7B52]",
-                    state === "attention" && "text-[#B87514]",
+                    state === "attention" && "text-[#8A5A0E]",
                     state === "incomplete" && "text-secondaryText",
                   )}
                 >

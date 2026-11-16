@@ -20,6 +20,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/brand/logo";
 
 const navItems = [
   { label: "Overview", href: "/admin", icon: LayoutGrid },
@@ -51,9 +52,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-[#F7F9FC] text-[#172033]">
       <aside className="hidden w-72 flex-col border-r border-border bg-[#101B35] p-5 text-white lg:flex">
         <div className="mb-6 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#16D6B2] text-lg font-bold text-[#101B35]">W</div>
-          <div>
-            <div className="text-lg font-semibold">Webineer Admin</div>
+          <Logo tone="onDark" className="h-9 w-auto" />
+          <div className="border-l border-white/20 pl-3">
+            <div className="text-sm font-semibold">Admin</div>
             <div className="text-xs text-white/60">Platform control</div>
           </div>
         </div>

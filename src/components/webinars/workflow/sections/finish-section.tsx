@@ -191,7 +191,7 @@ export function FinishSection({ draft, goTo, context, evaluation, onSaveDraft, o
                   <h3 id={`summary-${s.key}`} className="text-sm text-primaryText">
                     {s.label}
                   </h3>
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", state === "completed" ? "bg-[#EAFBF5] text-[#0F7B52]" : state === "attention" ? "bg-[#FFF3DE] text-[#B87514]" : "bg-[#EEF2F7] text-[#64748B]")}>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", state === "completed" ? "bg-[#EAFBF5] text-[#0F7B52]" : state === "attention" ? "bg-[#FFF3DE] text-[#8A5A0E]" : "bg-[#EEF2F7] text-[#64748B]")}>
                     {state === "completed" ? "Complete" : state === "attention" ? "Needs attention" : "Incomplete"}
                   </span>
                 </div>

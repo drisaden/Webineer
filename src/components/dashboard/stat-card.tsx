@@ -9,7 +9,7 @@ export function StatCard({ label, value, change, tone = "default" }: { label: st
           <p className="text-sm text-secondaryText">{label}</p>
           <p className="mt-3 text-3xl tracking-tight text-primaryText">{value}</p>
         </div>
-        {change && <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${tone === "success" ? "bg-[#EAFBF5] text-[#0F7B52]" : tone === "info" ? "bg-[#E9F2FF] text-[#2F6FCF]" : "bg-[#EEF2F7] text-[#42526A]"}`}>
+        {change && <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${tone === "success" ? "bg-[#EAFBF5] text-[#0F7B52]" : tone === "info" ? "bg-[#E9F2FF] text-[#2457AA]" : "bg-[#EEF2F7] text-[#42526A]"}`}>
           <ArrowUpRight className="h-3.5 w-3.5" />
           {change}
         </div>}

@@ -6,6 +6,7 @@ import { TrackingScripts } from "@/components/registration/tracking-scripts";
 import { canManageWebinar, getCurrentUser } from "@/lib/auth/demo-session";
 import { getStore } from "@/server/repositories";
 import { hostAllowed, publicViewFor } from "@/services/registration-service";
+import { Wordmark } from "@/components/brand/logo";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Register", robots: { index: false } };
@@ -71,7 +72,7 @@ export default async function EmbedRegistrationPage({
           </div>
           <RegistrationForm view={view} source={source} embedded preview={isDraft} />
           <p className="mt-4 text-center text-[11px] text-secondaryText">
-            Powered by <span className="font-semibold">Webineer</span>
+            <span className="inline-flex items-center gap-1.5 align-middle">Powered by <Wordmark tone="auto" title="Webineer" className="inline-block h-3 w-auto" /></span>
           </p>
         </div>
       )}

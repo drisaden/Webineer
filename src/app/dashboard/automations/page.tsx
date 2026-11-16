@@ -30,7 +30,7 @@ export default async function AutomationsPage() {
         <section className="grid gap-4 md:grid-cols-3">
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Enabled</span><PlayCircle className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.enabled}</p></Card>
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Runs today</span><Workflow className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.runsToday}</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Pending queue</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.pending}</p>{data.failed > 0 && <p className="mt-1 text-xs text-[#B87514]">{data.failed} failed</p>}</Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Pending queue</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.pending}</p>{data.failed > 0 && <p className="mt-1 text-xs text-[#8A5A0E]">{data.failed} failed</p>}</Card>
         </section>
 
         <Card>

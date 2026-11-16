@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, PlayCircle, ShieldCheck, Sparkles, Video, Wand2 } from "lucide-react";
 import { APP_NAME, APP_SUPPORTING_MESSAGE, APP_TAGLINE } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/logo";
 
 const capabilityList = [
   "External video integrations",
@@ -46,7 +47,7 @@ export default function MarketingPage() {
       <header className="mx-auto max-w-7xl px-6 py-5">
         <nav className="flex items-center justify-between rounded-full border border-white/60 bg-white/70 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <img src="/brand/webineer-logo.svg" alt={`${APP_NAME} logo`} className="h-9 w-auto" />
+            <Logo tone="auto" className="h-9 w-auto" title={APP_NAME} />
           </div>
           <div className="hidden items-center gap-8 text-sm text-secondaryText md:flex">
             <Link href="#platform">Platform</Link>
@@ -227,10 +228,7 @@ export default function MarketingPage() {
       <footer className="border-t border-white/60 bg-white/75 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 md:grid-cols-3">
           <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#101B35] text-sm font-bold text-white">W</div>
-              <div className="text-lg font-semibold">{APP_NAME}</div>
-            </div>
+            <Logo tone="auto" className="h-9 w-auto" title={APP_NAME} />
             <p className="mt-3 max-w-xs text-sm text-secondaryText">{APP_SUPPORTING_MESSAGE}</p>
           </div>
           <div>

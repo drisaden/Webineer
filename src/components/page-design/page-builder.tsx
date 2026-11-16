@@ -809,7 +809,7 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
 
           {/* canvas */}
           <div className="min-w-0 flex-1 overflow-y-auto" onClick={() => setSelectedId(null)} data-testid="builder-canvas">
-            <div className="min-h-full px-4 py-8 md:px-6" style={pageThemeStyle(design.theme)}>
+            <div className="light-scope min-h-full px-4 py-8 md:px-6" style={pageThemeStyle(design.theme)}>
               {!design.enabled && (
                 <div className="mx-auto mb-5 max-w-6xl">
                   <Notice tone="warning">The standard layout is live. Turn on &ldquo;Use this design on the live page&rdquo; in the Page tab to publish this design.</Notice>

@@ -57,7 +57,7 @@ function EmailEditor({
               <p className="font-medium text-primaryText">{applyPlaceholders(value.subject, variables)}</p>
               <hr className="my-3 border-border" />
               {/* Rendered from escaped text: user content cannot inject markup. */}
-              <div className="text-sm leading-relaxed text-primaryText [&_a]:text-[#2F6FCF] [&_a]:underline" dangerouslySetInnerHTML={{ __html: renderEmailHtml(value.body, variables) }} />
+              <div className="text-sm leading-relaxed text-primaryText [&_a]:text-[#2457AA] [&_a]:underline" dangerouslySetInnerHTML={{ __html: renderEmailHtml(value.body, variables) }} />
               <p className="mt-3 text-[11px] text-secondaryText">Preview uses sample registrant data.</p>
             </div>
           )}

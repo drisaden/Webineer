@@ -6,6 +6,7 @@ import { DesignedRegistrationPage } from "@/components/page-design/designed-regi
 import { PreviewPlayer } from "./preview-player";
 import { RegistrationForm } from "./registration-form";
 import { TrackingScripts } from "./tracking-scripts";
+import { Logo } from "@/components/brand/logo";
 
 /** Hosted registration page rendered from the workflow configuration. */
 export function ConfiguredRegistrationPage({ view, preview, source }: { view: PublicRegistrationView; preview: boolean; source: RegistrationSource }) {
@@ -21,10 +22,7 @@ export function ConfiguredRegistrationPage({ view, preview, source }: { view: Pu
       )}
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#101B35] text-sm font-bold text-white">W</div>
-            <div className="text-lg font-semibold">Webineer</div>
-          </div>
+          <Logo tone="onLight" className="h-9 w-auto" />
           <Link href="/" className="text-sm font-medium text-secondaryText">
             Back to homepage
           </Link>
