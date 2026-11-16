@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { livePlanHighlights } from "@/lib/live/features";
 import { ArrowRight, CheckCircle2, PlayCircle, ShieldCheck, Sparkles, Video, Wand2 } from "lucide-react";
 import { APP_NAME, APP_SUPPORTING_MESSAGE, APP_TAGLINE } from "@/lib/constants/site";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 
 const capabilityList = [
@@ -187,6 +189,9 @@ export default function MarketingPage() {
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Basic webinar automation</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Audience insights</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Registration landing pages</li>
+                  {livePlanHighlights(plan.key as "starter" | "professional" | "business").map((line) => (
+                    <li key={line} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-[#16A36A]" /> {line}</li>
+                  ))}
                 </ul>
                 <Button asChild className="mt-6 w-full" variant={idx === 1 ? "primary" : "secondary"}><Link href={`/register?plan=${plan.key}`}>{plan.cta}</Link></Button>
               </div>
@@ -210,30 +215,7 @@ export default function MarketingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-white/60 bg-white/75 backdrop-blur-xl">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-10 md:grid-cols-3">
-          <div>
-            <Logo tone="auto" className="h-9 w-auto" title={APP_NAME} />
-            <p className="mt-3 max-w-xs text-sm text-secondaryText">{APP_SUPPORTING_MESSAGE}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold">Product</h3>
-            <ul className="mt-3 space-y-2 text-sm text-secondaryText">
-              <li>Webinars</li>
-              <li>Landing pages</li>
-              <li>Analytics</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold">Company</h3>
-            <ul className="mt-3 space-y-2 text-sm text-secondaryText">
-              <li>Help center</li>
-              <li>Privacy</li>
-              <li>Terms</li>
-            </ul>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

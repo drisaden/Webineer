@@ -1,4 +1,5 @@
 import { getPrisma } from "@/server/db/prisma";
+import { pruneLiveData } from "@/server/live/service";
 import { getStore } from "@/server/repositories";
 import { primarySessionWindow, nextEvergreenSession } from "@/lib/webinar-workflow/sync";
 import { resolveSessions, zonedToUtc } from "@/lib/webinar-workflow/time";
@@ -222,7 +223,8 @@ const cleanup: JobHandler = async () => {
   const db = getPrisma();
   const { count } = await db.automationJob.deleteMany({ where: { status: { in: ["SUCCEEDED", "CANCELLED"] }, updatedAt: { lt: cutoff } } });
   const limits = await db.rateLimit.deleteMany({ where: { windowStart: { lt: new Date(Date.now() - 2 * 86400e3) } } });
-  return { deletedJobs: count, deletedRateLimits: limits.count };
+  const live = await pruneLiveData();
+  return { deletedJobs: count, deletedRateLimits: limits.count, deletedLiveReactions: live.reactions, deletedLivePresence: live.presence };
 };
 
 export const JOB_HANDLERS: Record<string, JobHandler> = {

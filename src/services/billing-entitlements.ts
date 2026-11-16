@@ -1,4 +1,25 @@
+/** What a plan unlocks inside the live attendee room. */
+export interface LiveEntitlements {
+  /** Public chat. */
+  chat: boolean;
+  /** "N watching" counter. */
+  viewerCount: boolean;
+  /** Floating emoji reactions. */
+  reactions: boolean;
+  /** Attendee questions that the host can answer. */
+  qa: boolean;
+  /** Live polls. */
+  polls: boolean;
+  /** Pinned message and host announcement banner. */
+  announcements: boolean;
+  /** Slow mode, locking chat and muting attendees. */
+  moderationTools: boolean;
+  /** Download chat and Q&A as a CSV file. */
+  transcriptExport: boolean;
+}
+
 export interface PlanEntitlements {
+  live: LiveEntitlements;
   maxWebinars: number;
   maxRegistrantsPerWebinar: number;
   allowEvergreenAutomated: boolean;
@@ -22,6 +43,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
     currency: "USD",
     description: "Explore the platform, test external video embeds, and run simple live webinars.",
     entitlements: {
+      live: { chat: true, viewerCount: true, reactions: false, qa: false, polls: false, announcements: false, moderationTools: false, transcriptExport: false },
       maxWebinars: 3,
       maxRegistrantsPerWebinar: 50,
       allowEvergreenAutomated: false,
@@ -38,6 +60,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
     currency: "USD",
     description: "For creators and educators scaling registration funnels with email automation.",
     entitlements: {
+      live: { chat: true, viewerCount: true, reactions: true, qa: true, polls: false, announcements: false, moderationTools: false, transcriptExport: false },
       maxWebinars: 10,
       maxRegistrantsPerWebinar: 300,
       allowEvergreenAutomated: true,
@@ -54,6 +77,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
     currency: "USD",
     description: "Full automation suite with evergreen sessions, paid tickets, and custom domains.",
     entitlements: {
+      live: { chat: true, viewerCount: true, reactions: true, qa: true, polls: true, announcements: true, moderationTools: true, transcriptExport: false },
       maxWebinars: 50,
       maxRegistrantsPerWebinar: 1500,
       allowEvergreenAutomated: true,
@@ -70,6 +94,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
     currency: "USD",
     description: "Unlimited webinars, dedicated webhook bandwidth, and team role collaboration.",
     entitlements: {
+      live: { chat: true, viewerCount: true, reactions: true, qa: true, polls: true, announcements: true, moderationTools: true, transcriptExport: true },
       maxWebinars: 9999,
       maxRegistrantsPerWebinar: 10000,
       allowEvergreenAutomated: true,

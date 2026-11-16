@@ -19,6 +19,8 @@ export interface WorkflowContextInfo {
   analytics: RegistrationAnalyticsSummary | null;
   webhookSecret: string;
   dirtySections: WorkflowDataSectionKey[];
+  /** The workspace plan, which decides the live room features. */
+  livePlan: "free" | "starter" | "professional" | "business";
 }
 
 export interface SectionProps {

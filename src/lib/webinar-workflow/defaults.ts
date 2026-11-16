@@ -202,8 +202,11 @@ export function createDefaultWorkflowConfig(options: {
       lateJoinCutoffMinutes: 30,
       showPresenters: true,
       showDescription: true,
-      chatEnabled: false,
-      qaEnabled: false,
+      chatEnabled: true,
+      qaEnabled: true,
+      pollsEnabled: true,
+      reactionsEnabled: true,
+      viewerCountEnabled: true,
       cta: { enabled: false, label: "", url: "", showAfterMinutes: 0 },
     },
     replay: {

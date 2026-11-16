@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BookOpen, CalendarClock, LayoutTemplate, PlayCircle, Video } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { SupportHub } from "@/components/support/support-hub";
 
 const guides = [
   { icon: Video, title: "Create a webinar", body: "Pick a mode, add your video link and schedule, then publish.", href: "/dashboard/webinars/new", cta: "Start a webinar" },
@@ -13,6 +14,9 @@ export default function HelpPage() {
   return (
     <DashboardShell title="Help & Support">
       <div className="space-y-5">
+        <SupportHub />
+
+        <h2 className="pt-2 text-lg text-primaryText">Quick guides</h2>
         <div className="flex flex-col gap-4 rounded-[2rem] border border-border bg-white p-6 shadow-soft md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF5] text-[#0F7B52]">
@@ -45,7 +49,9 @@ export default function HelpPage() {
 
         <div className="flex items-start gap-3 rounded-[1.5rem] border border-dashed border-border bg-[#F7F9FC] p-5 text-sm text-secondaryText">
           <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[#17294B]" aria-hidden />
-          <p>Need a hand with something else? Reply to any email from Webineer and it reaches the team that runs this site.</p>
+          <p>
+            More step-by-step guides are in the <Link href="/help" className="font-medium text-[#17294B] underline">help center</Link>.
+          </p>
         </div>
       </div>
     </DashboardShell>

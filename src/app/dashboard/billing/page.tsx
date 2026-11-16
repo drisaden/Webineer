@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getPrisma } from "@/server/db/prisma";
 import { getAppSession } from "@/server/auth/session";
 import { getBillingData } from "@/server/billing";
+import { livePlanHighlights } from "@/lib/live/features";
 import { billingService, SAAS_PLANS } from "@/services/billing-entitlements";
 
 export const dynamic = "force-dynamic";
@@ -96,13 +97,24 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                 <div className="text-3xl font-semibold">${plan.priceMonthly}<span className="text-base font-normal text-secondaryText">/mo</span></div>
                 <p className="text-sm text-secondaryText">{plan.description}</p>
                 <ul className="space-y-2 text-sm text-secondaryText">
-                  {Object.entries(plan.entitlements).slice(0, 5).map(([name, value]) => (
+                  {Object.entries(plan.entitlements).filter(([name]) => name !== "live").slice(0, 5).map(([name, value]) => (
                     <li key={name} className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-[#16A36A]" />
                       <span>{name.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}: {String(value)}</span>
                     </li>
                   ))}
                 </ul>
+                <div className="border-t border-border pt-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-secondaryText">In the live room</p>
+                  <ul className="space-y-1.5 text-sm text-secondaryText">
+                    {livePlanHighlights(key as keyof typeof SAAS_PLANS).map((line) => (
+                      <li key={line} className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16A36A]" />
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 {!demo && plan.priceMonthly > 0 && data.canManageBilling && data.paymentsReady && (
                   <UpgradeButton plan={key} label={key === currentKey ? "Extend 30 days" : `Switch to ${plan.name}`} />
                 )}

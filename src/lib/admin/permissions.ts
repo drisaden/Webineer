@@ -23,7 +23,8 @@ export type AdminPermission =
   | "admin.database.maintenance"
   | "admin.jobs.manage"
   | "admin.audit.view"
-  | "admin.admins.manage";
+  | "admin.admins.manage"
+  | "admin.support.manage";
 
 export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
   "super-admin": "Super Admin",
@@ -53,6 +54,7 @@ export const ADMIN_PERMISSION_MATRIX: Record<AdminRole, AdminPermission[]> = {
     "admin.jobs.manage",
     "admin.audit.view",
     "admin.admins.manage",
+    "admin.support.manage",
   ],
   "platform-admin": [
     "admin.dashboard.view",
@@ -67,6 +69,7 @@ export const ADMIN_PERMISSION_MATRIX: Record<AdminRole, AdminPermission[]> = {
     "admin.integrations.manage",
     "admin.settings.manage",
     "admin.audit.view",
+    "admin.support.manage",
   ],
   "support-admin": [
     "admin.dashboard.view",
@@ -74,6 +77,7 @@ export const ADMIN_PERMISSION_MATRIX: Record<AdminRole, AdminPermission[]> = {
     "admin.workspaces.view",
     "admin.webinars.view",
     "admin.audit.view",
+    "admin.support.manage",
   ],
   "finance-admin": [
     "admin.dashboard.view",

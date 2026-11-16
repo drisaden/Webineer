@@ -217,6 +217,10 @@ export interface LiveSettings {
   showDescription: boolean;
   chatEnabled: boolean;
   qaEnabled: boolean;
+  /** Live polls and reactions and the viewer count default to on when missing (older webinars). */
+  pollsEnabled?: boolean;
+  reactionsEnabled?: boolean;
+  viewerCountEnabled?: boolean;
   cta: {
     enabled: boolean;
     label: string;

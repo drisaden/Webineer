@@ -181,6 +181,9 @@ export const sectionSchemas = {
     showDescription: z.boolean(),
     chatEnabled: z.boolean(),
     qaEnabled: z.boolean(),
+    pollsEnabled: z.boolean().optional(),
+    reactionsEnabled: z.boolean().optional(),
+    viewerCountEnabled: z.boolean().optional(),
     cta: z.object({
       enabled: z.boolean(),
       label: str(60),

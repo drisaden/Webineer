@@ -4,6 +4,7 @@ import { WebinarWorkflow } from "@/components/webinars/workflow/webinar-workflow
 import { getCurrentUser } from "@/lib/auth/demo-session";
 import { WORKFLOW_SECTIONS } from "@/lib/webinar-workflow/defaults";
 import { resolveAppOrigin } from "@/lib/webinar-workflow/embed";
+import { livePlanFor } from "@/server/live/plan";
 import { ensureWorkflow, getOwnedWebinar, getPaymentAvailability, toWorkflowPayload, WorkflowError } from "@/services/webinar-workflow-service";
 import type { WorkflowSectionKey } from "@/types";
 
@@ -39,6 +40,7 @@ export default async function WebinarSetupPage({
         initialSection={initialSection}
         appOrigin={resolveAppOrigin()}
         payment={getPaymentAvailability()}
+        livePlan={await livePlanFor(user.workspaceId)}
       />
     </DashboardShell>
   );

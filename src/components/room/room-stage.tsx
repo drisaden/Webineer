@@ -19,6 +19,7 @@ export function RoomStage({
   alwaysOpen,
   startLabel,
   liveLabel,
+  overlay,
   children,
 }: {
   title: string;
@@ -29,6 +30,8 @@ export function RoomStage({
   alwaysOpen: boolean;
   startLabel: string;
   liveLabel: string;
+  /** Drawn over the video once it is playing (floating reactions). */
+  overlay?: ReactNode;
   children: ReactNode;
 }) {
   const target = new Date(startsAt).getTime();
@@ -46,9 +49,12 @@ export function RoomStage({
         </span>
       </div>
       <div className="overflow-hidden rounded-[1.5rem] border border-border bg-[#101B35]">
-        <div className="aspect-video w-full bg-[#111C2E]">
+        <div className="relative aspect-video w-full bg-[#111C2E]">
           {started ? (
-            children
+            <>
+              {children}
+              {overlay}
+            </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center text-white">
               <p className="text-sm uppercase tracking-[0.15em] text-white/70">You&apos;re in. The session starts in</p>

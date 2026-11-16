@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -12,6 +13,7 @@ const links = [
   { href: "#solutions", label: "Solutions" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
+  { href: "/help", label: "Help" },
 ];
 
 /**
@@ -20,6 +22,9 @@ const links = [
  */
 export function MarketingNav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  // Section anchors only exist on the homepage, so from other pages they point back to it.
+  const hrefFor = (href: string) => (href.startsWith("#") && pathname !== "/" ? `/${href}` : href);
   const rootRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -52,7 +57,7 @@ export function MarketingNav() {
 
           <div className="hidden items-center gap-8 text-sm text-secondaryText md:flex">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-primaryText">
+              <Link key={link.href} href={hrefFor(link.href)} className="hover:text-primaryText">
                 {link.label}
               </Link>
             ))}
@@ -84,7 +89,7 @@ export function MarketingNav() {
             <ul className="space-y-1">
               {links.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} onClick={() => setOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-base font-medium text-primaryText hover:bg-[#EEF5FF]">
+                  <Link href={hrefFor(link.href)} onClick={() => setOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-base font-medium text-primaryText hover:bg-[#EEF5FF]">
                     {link.label}
                   </Link>
                 </li>

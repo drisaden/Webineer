@@ -56,12 +56,14 @@ export function WebinarWorkflow({
   initialSection,
   appOrigin: serverOrigin,
   payment,
+  livePlan,
 }: {
   initialPayload: WorkflowPayload | null;
   initialConfig: WebinarWorkflowConfig;
   initialSection: WorkflowSectionKey;
   appOrigin: string;
   payment: PaymentAvailability;
+  livePlan: WorkflowContextInfo["livePlan"];
 }) {
   const [meta, setMeta] = useState(initialPayload?.webinar ?? null);
   const [config, setConfig] = useState<WebinarWorkflowConfig>(initialPayload?.config ?? initialConfig);
@@ -296,6 +298,7 @@ export function WebinarWorkflow({
     analytics,
     webhookSecret: config.integrations.webhook.secret,
     dirtySections,
+    livePlan,
   };
   const previewHref = meta?.slug ? `/w/${meta.slug}${meta.status === "draft" ? "?preview=1" : ""}` : null;
 
