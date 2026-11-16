@@ -176,16 +176,18 @@ export default function MarketingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.15em] text-secondaryText">Illustrative pricing</p>
             <h2 className="mt-3 text-3xl">Simple plans for teams at every stage</h2>
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid items-stretch gap-5 md:grid-cols-3">
             {plans.map((plan, idx) => (
-              <div key={plan.name} className={`rounded-[1.75rem] border p-6 backdrop-blur-xl ${idx === 1 ? "border-[#0AEBCB] bg-[linear-gradient(180deg,rgba(10,235,203,0.12),rgba(255,255,255,0.72))] shadow-[0_20px_45px_rgba(10,235,203,0.12)]" : "border-white/60 bg-white/75 shadow-[0_12px_24px_rgba(15,23,42,0.04)]"}`}>
-                <h3 className="text-xl font-semibold">{plan.name}</h3>
-                <div className="mt-4 flex items-end gap-1">
-                  <span className="text-4xl font-semibold">{plan.price}</span>
-                  <span className="pb-2 text-sm text-secondaryText">/month</span>
+              <div key={plan.name} className={`flex h-full flex-col rounded-[1.75rem] border p-6 backdrop-blur-xl ${idx === 1 ? "border-[#0AEBCB] bg-[linear-gradient(180deg,rgba(10,235,203,0.12),rgba(255,255,255,0.72))] shadow-[0_20px_45px_rgba(10,235,203,0.12)]" : "border-white/60 bg-white/75 shadow-[0_12px_24px_rgba(15,23,42,0.04)]"}`}>
+                <div>
+                  <h3 className="text-xl font-semibold">{plan.name}</h3>
+                  <div className="mt-4 flex items-end gap-1">
+                    <span className="text-4xl font-semibold">{plan.price}</span>
+                    <span className="pb-2 text-sm text-secondaryText">/month</span>
+                  </div>
+                  <p className="mt-4 text-sm text-secondaryText">{plan.description}</p>
                 </div>
-                <p className="mt-4 text-sm text-secondaryText">{plan.description}</p>
-                <ul className="mt-4 space-y-2 text-sm text-primaryText">
+                <ul className="mt-4 flex-1 space-y-2 text-sm text-primaryText">
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Basic webinar automation</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Audience insights</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> Registration landing pages</li>
