@@ -293,6 +293,7 @@ export async function publishWebinar(user: User, id: string): Promise<Webinar> {
 
 /** Soft-delete a webinar (keeps registrations and payments for records). */
 export async function deleteWebinar(user: User, id: string): Promise<void> {
+  if (user.role !== "owner") throw new WorkflowError("Only workspace owners can delete webinars.", 403);
   const webinar = await getOwnedWebinar(user, id, "webinar.delete");
   await getStore().softDeleteWebinar(webinar.id);
   await audit({ organizationId: webinar.workspaceId, actorUserId: user.id, actorEmail: user.email, action: "webinar.delete", targetType: "webinar", targetId: webinar.id, metadata: { title: webinar.title } });

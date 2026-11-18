@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getEmbedUrl } from "@/providers/video";
 import { getStore } from "@/server/repositories";
-import { getCurrentUser, userCan } from "@/lib/auth/demo-session";
+import { getCurrentUser } from "@/lib/auth/demo-session";
 import { DeleteWebinarButton } from "@/components/webinars/delete-webinar-button";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function WebinarDetailPage({
             <p className="mt-1 text-sm text-white/70">{webinar.description}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {userCan(user, "webinar.delete") && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
+            {user?.role === "owner" && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
             <Button asChild variant="secondary" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
               <Link href={`/dashboard/webinars/${webinar.id}/setup`}>
                 <Settings2 className="mr-2 h-4 w-4" /> Edit setup
