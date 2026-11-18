@@ -48,16 +48,31 @@ import {
   UserRound,
   Video,
   ClipboardList,
+  BarChart3,
+  Columns3,
+  GalleryHorizontal,
+  Gift,
+  Heading1,
+  Lock,
+  MapPin,
+  MousePointerClick,
+  Share2,
+  Star,
+  Tags,
   X,
 } from "lucide-react";
 import { MediaUploadField } from "@/components/uploads/media-upload-field";
 import { Button } from "@/components/ui/button";
 import { Notice, SelectInput, TextArea, TextInput, Toggle } from "@/components/webinars/workflow/form-controls";
-import { BLOCK_BY_TYPE, BLOCK_DEFINITIONS, MAX_BLOCK_ITEMS, MAX_PAGE_BLOCKS, PAGE_TEMPLATES, blockId, createBlock, defaultPageDesign } from "@/lib/page-design/defaults";
+import { BLOCK_BY_TYPE, BLOCK_DEFINITIONS, MAX_BLOCK_ITEMS, MAX_NESTED_BLOCKS, MAX_PAGE_BLOCKS, blockId, createBlock, defaultPageDesign } from "@/lib/page-design/defaults";
+import { ICON_LABEL, PAGE_ICONS } from "@/lib/page-design/icons";
+import { pageDesignPlanIssue, type PageBuilderLimits } from "@/lib/page-design/plan";
+import { ALL_TEMPLATES, templateNeedsPaidPlan } from "@/lib/page-design/templates";
+import { cloneWithNewIds, countBlocks, findBlock, findParent, insertIntoColumn, mapBlock, moveInColumn, removeBlockById, resizeColumns, treeHasType, containsType } from "@/lib/page-design/tree";
 import { isSingleBlock, pageDesignSchema } from "@/lib/page-design/schema";
 import type { PublicRegistrationView } from "@/lib/webinar-workflow/public-view";
 import { cn } from "@/lib/utils";
-import type { PageBlock, PageBlockType, PageDesign, PageTheme, RegistrationSettings } from "@/types";
+import type { PageBlock, PageBlockType, PageDesign, PageIcon, PageTheme, RegistrationSettings } from "@/types";
 import { PageBlocksLayout, PageBlockView, pageThemeStyle } from "./blocks";
 
 const BLOCK_ICONS: Record<PageBlockType, typeof Type> = {
@@ -74,6 +89,18 @@ const BLOCK_ICONS: Record<PageBlockType, typeof Type> = {
   cta: Megaphone,
   form: ClipboardList,
   divider: Minus,
+  heading: Heading1,
+  button: MousePointerClick,
+  iconbox: Star,
+  pricing: Gift,
+  stats: BarChart3,
+  timeline: ListChecks,
+  gallery: GalleryHorizontal,
+  logos: Tags,
+  tabs: PanelsTopLeft,
+  social: Share2,
+  map: MapPin,
+  columns: Columns3,
 };
 
 const DEVICES = [
@@ -92,6 +119,7 @@ interface Props {
   registration: RegistrationSettings;
   baseVersion: number;
   view: PublicRegistrationView;
+  limits: PageBuilderLimits;
 }
 
 /* ───────────────────────── small controls ───────────────────────── */
@@ -156,20 +184,20 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
 
 /* ───────────────────────── palette ───────────────────────── */
 
-function PaletteItem({ type, disabled, onAdd }: { type: PageBlockType; disabled: boolean; onAdd: () => void }) {
+function PaletteItem({ type, disabled, locked, onAdd }: { type: PageBlockType; disabled: boolean; locked?: boolean; onAdd: () => void }) {
   const definition = BLOCK_BY_TYPE[type];
   const Icon = BLOCK_ICONS[type];
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `palette:${type}`, data: { from: "palette", type }, disabled });
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `palette:${type}`, data: { from: "palette", type }, disabled: disabled || locked });
   return (
     <button
       ref={setNodeRef}
       type="button"
-      disabled={disabled}
+      disabled={disabled || locked}
       onClick={onAdd}
-      title={disabled ? "Already on the page" : `${definition.description}. Drag onto the page or click to add.`}
+      title={locked ? "Needs a paid plan. Upgrade in Billing." : disabled ? "Already on the page, or the page is full" : `${definition.description}. Drag onto the page or click to add.`}
       data-palette={type}
       className={cn(
-        "flex cursor-grab touch-none flex-col items-center gap-1.5 rounded-xl border border-border bg-white px-2 py-3 text-center text-xs font-medium text-primaryText transition-all hover:border-[#16D6B2] hover:shadow-soft active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40",
+        "relative flex min-h-[44px] cursor-grab touch-none flex-col items-center gap-1.5 rounded-xl border border-border bg-white px-2 py-3 text-center text-xs font-medium text-primaryText transition-all hover:border-[#16D6B2] hover:shadow-soft active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40",
         isDragging && "opacity-40",
       )}
       {...listeners}
@@ -177,6 +205,7 @@ function PaletteItem({ type, disabled, onAdd }: { type: PageBlockType; disabled:
     >
       <Icon className="h-5 w-5 text-[#17294B]" aria-hidden />
       {definition.label}
+      {locked && <Lock className="absolute right-1.5 top-1.5 h-3 w-3 text-secondaryText" aria-label="Paid plan" />}
     </button>
   );
 }
@@ -281,7 +310,84 @@ function CanvasEnd({ active }: { active: boolean }) {
 
 /* ───────────────────────── block settings ───────────────────────── */
 
-function BlockSettings({ block, view, onChange }: { block: PageBlock; view: PublicRegistrationView; onChange: (next: PageBlock, coalesce?: string) => void }) {
+interface ColumnTools {
+  limits: PageBuilderLimits;
+  isPlaced: (type: PageBlockType) => boolean;
+  full: boolean;
+  select: (id: string) => void;
+  add: (columnId: string, type: PageBlockType) => void;
+  move: (id: string, direction: -1 | 1) => void;
+  remove: (id: string) => void;
+  resize: (count: number) => void;
+}
+
+function VisibilityControls({ block, onChange }: { block: PageBlock; onChange: (next: PageBlock, coalesce?: string) => void }) {
+  const show = block.show ?? { desktop: true, tablet: true, mobile: true };
+  const set = (device: "desktop" | "tablet" | "mobile", value: boolean) => {
+    const next = { ...show, [device]: value };
+    onChange({ ...block, show: next.desktop && next.tablet && next.mobile ? undefined : next }, `${block.id}:show`);
+  };
+  return (
+    <PanelSection title="Show on">
+      <div className="grid grid-cols-3 gap-2" role="group" aria-label="Devices this block is shown on">
+        {([["desktop", "Desktop", Monitor], ["tablet", "Tablet", Tablet], ["mobile", "Phone", Smartphone]] as const).map(([key, label, Icon]) => (
+          <button key={key} type="button" aria-pressed={show[key]} data-show={key} onClick={() => set(key, !show[key])} className={cn("flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium", show[key] ? "border-[#16D6B2] bg-[#EAFBF5] text-[#0F7B52]" : "border-border bg-white text-secondaryText")}>
+            <Icon className="h-4 w-4" aria-hidden /> {label}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-secondaryText">Turn a device off to hide this block there. Check it in the device preview.</p>
+    </PanelSection>
+  );
+}
+
+function ColumnsEditor({ block, tools }: { block: PageBlock; tools: ColumnTools }) {
+  const columns = block.columns ?? [];
+  const addable = BLOCK_DEFINITIONS.filter((d) => d.type !== "columns" && (!d.advanced || tools.limits.advancedElements));
+  return (
+    <div className="space-y-3" data-testid="columns-editor">
+      <Segmented label="Columns" value={String(columns.length) as "1" | "2" | "3" | "4"} onChange={(v) => tools.resize(Number(v))} options={[{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }]} />
+      {columns.map((column, ci) => (
+        <div key={column.id} className="space-y-2 rounded-xl border border-border bg-[#F7F9FC] p-3" data-column={ci + 1}>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-secondaryText">Column {ci + 1}</p>
+          {column.blocks.length === 0 && <p className="text-xs text-secondaryText">Empty. Add an element below.</p>}
+          {column.blocks.map((child, i) => (
+            <div key={child.id} className="flex items-center gap-1 rounded-lg bg-white px-2 py-1">
+              <button type="button" onClick={() => tools.select(child.id)} data-child-edit={child.type} className="min-h-[44px] flex-1 truncate text-left text-sm font-medium text-[#17294B]">
+                {BLOCK_BY_TYPE[child.type].label}
+              </button>
+              <button type="button" aria-label={`Move ${BLOCK_BY_TYPE[child.type].label} up`} disabled={i === 0} onClick={() => tools.move(child.id, -1)} className="rounded p-1.5 text-secondaryText disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+              <button type="button" aria-label={`Move ${BLOCK_BY_TYPE[child.type].label} down`} disabled={i === column.blocks.length - 1} onClick={() => tools.move(child.id, 1)} className="rounded p-1.5 text-secondaryText disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+              {child.type !== "form" && <button type="button" aria-label={`Remove ${BLOCK_BY_TYPE[child.type].label}`} onClick={() => tools.remove(child.id)} className="rounded p-1.5 text-[#B33A3A]"><Trash2 className="h-3.5 w-3.5" /></button>}
+            </div>
+          ))}
+          {column.blocks.length < MAX_NESTED_BLOCKS && !tools.full && (
+            <select
+              aria-label={`Add an element to column ${ci + 1}`}
+              data-add-to-column={ci + 1}
+              className="input-field min-h-[44px] text-sm"
+              value=""
+              onChange={(e) => {
+                const type = e.target.value as PageBlockType;
+                if (type) tools.add(column.id, type);
+              }}
+            >
+              <option value="">+ Add element…</option>
+              {addable.map((d) => (
+                <option key={d.type} value={d.type} disabled={Boolean(d.single) && tools.isPlaced(d.type)}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      ))}
+      {tools.full && <Notice tone="warning">The page has reached its element limit.</Notice>}
+    </div>
+  );
+}
+
+function BlockSettings({ block, view, onChange, tools }: { block: PageBlock; view: PublicRegistrationView; onChange: (next: PageBlock, coalesce?: string) => void; tools: ColumnTools }) {
   const definition = BLOCK_BY_TYPE[block.type];
   const has = (field: (typeof definition.fields)[number]) => definition.fields.includes(field);
   const set = <K extends keyof PageBlock>(key: K, value: PageBlock[K], coalesce = true) => onChange({ ...block, [key]: value }, coalesce ? `${block.id}:${String(key)}` : undefined);
@@ -323,7 +429,19 @@ function BlockSettings({ block, view, onChange }: { block: PageBlock; view: Publ
         {has("imageSide") && (
           <Segmented label="Image position" value={block.imageSide} onChange={(v) => set("imageSide", v, false)} options={[{ value: "left", label: "Left" }, { value: "right", label: "Right" }]} />
         )}
-        {has("button") && <TextInput label="Button text" optional value={block.buttonLabel} onChange={(v) => set("buttonLabel", v)} maxLength={60} hint="Scrolls to the registration form. Leave empty to hide the button." />}
+        {has("button") && <TextInput label="Button text" optional value={block.buttonLabel} onChange={(v) => set("buttonLabel", v)} maxLength={60} hint={block.type === "pricing" ? "Shown on every option. Each option can have its own link below." : "Scrolls to the registration form unless a link is set. Leave empty to hide the button."} />}
+        {has("link") && (
+          <TextInput
+            label={block.type === "map" ? "Map link" : "Link"}
+            optional
+            value={block.link ?? ""}
+            onChange={(v) => set("link", v.trim())}
+            maxLength={1000}
+            placeholder="https://"
+            hint={block.type === "button" ? "Leave empty to scroll to the registration form." : "Must start with https://"}
+          />
+        )}
+        {has("columns") && <ColumnsEditor block={block} tools={tools} />}
         {has("showDate") && <Toggle label="Show the session date" checked={block.showDate} onChange={(v) => set("showDate", v, false)} />}
         {has("height") && (
           <div>
@@ -358,6 +476,17 @@ function BlockSettings({ block, view, onChange }: { block: PageBlock; view: Publ
                 </div>
                 <input aria-label={`${labels.title} ${index + 1}`} className="input-field text-sm" placeholder={labels.title} maxLength={200} value={item.title} onChange={(e) => setItems(block.items.map((x) => (x.id === item.id ? { ...x, title: e.target.value } : x)), `${item.id}:title`)} />
                 <textarea aria-label={`${labels.text} ${index + 1}`} className="input-field resize-y text-sm" placeholder={labels.text} rows={2} maxLength={1500} value={item.text} onChange={(e) => setItems(block.items.map((x) => (x.id === item.id ? { ...x, text: e.target.value } : x)), `${item.id}:text`)} />
+                {definition.itemFields?.includes("icon") && (
+                  <select aria-label={`Icon ${index + 1}`} className="input-field min-h-[44px] text-sm" value={item.icon ?? "check"} onChange={(e) => setItems(block.items.map((x) => (x.id === item.id ? { ...x, icon: e.target.value as PageIcon } : x)))}>
+                    {PAGE_ICONS.map((icon) => <option key={icon} value={icon}>{ICON_LABEL[icon]}</option>)}
+                  </select>
+                )}
+                {definition.itemFields?.includes("image") && (
+                  <MediaUploadField label="Picture" optional value={item.imageUrl ?? ""} onChange={(v) => setItems(block.items.map((x) => (x.id === item.id ? { ...x, imageUrl: v } : x)))} />
+                )}
+                {definition.itemFields?.includes("link") && (
+                  <input aria-label={`Link ${index + 1}`} className="input-field text-sm" placeholder="Link (https://…)" maxLength={1000} value={item.link ?? ""} onChange={(e) => setItems(block.items.map((x) => (x.id === item.id ? { ...x, link: e.target.value.trim() } : x)), `${item.id}:link`)} />
+                )}
               </div>
             ))}
             {block.items.length < MAX_BLOCK_ITEMS && (
@@ -369,7 +498,9 @@ function BlockSettings({ block, view, onChange }: { block: PageBlock; view: Publ
         )}
       </PanelSection>
 
-      {block.type !== "divider" && (
+      <VisibilityControls block={block} onChange={onChange} />
+
+      {block.type !== "divider" && block.type !== "columns" && (
         <PanelSection title="Style">
           {block.type !== "image" && (
             <>
@@ -393,9 +524,64 @@ function BlockSettings({ block, view, onChange }: { block: PageBlock; view: Publ
   );
 }
 
+/* ───────────────────────── templates ───────────────────────── */
+
+const KIND_LABEL = { form: "Form only", standard: "Standard", long: "Long page" } as const;
+
+function TemplateGallery({ onTemplate, limits }: { onTemplate: (id: string) => void; limits: PageBuilderLimits }) {
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const [kind, setKind] = useState<"all" | "form" | "standard" | "long">("all");
+  const [category, setCategory] = useState("All");
+  const categories = useMemo(() => ["All", ...Array.from(new Set(ALL_TEMPLATES.map((t) => t.category ?? "Any webinar")))], []);
+  const shown = ALL_TEMPLATES.filter((t) => (kind === "all" || t.kind === kind) && (category === "All" || (t.category ?? "Any webinar") === category));
+  return (
+    <div className="space-y-3" data-testid="template-gallery">
+      <div className="grid grid-cols-2 gap-2">
+        <SelectInput label="Type" value={kind} onChange={(v) => setKind(v)} options={[{ value: "all", label: "All types" }, { value: "form", label: "Form only" }, { value: "standard", label: "Standard" }, { value: "long", label: "Long page" }]} />
+        <SelectInput label="For" value={category} onChange={(v) => setCategory(v)} options={categories.map((c) => ({ value: c, label: c === "All" ? "Everything" : c }))} />
+      </div>
+      {shown.length === 0 && <p className="text-xs text-secondaryText">No templates match.</p>}
+      {shown.map((template) => {
+        const built = template.build();
+        const locked = templateNeedsPaidPlan(template) && !limits.advancedElements;
+        return (
+          <div key={template.id} className="rounded-xl border border-border bg-white p-3" data-template-card={template.id}>
+            <div className="flex gap-3">
+              <div aria-hidden className="flex h-14 w-12 shrink-0 flex-col gap-0.5 overflow-hidden rounded-lg border border-border p-1" style={{ background: built.theme.background }}>
+                {built.blocks.slice(0, 5).map((b) => (
+                  <span key={b.id} className="block h-2 rounded-sm" style={{ background: b.style.background || built.theme.accent, opacity: b.style.background ? 1 : 0.5 }} />
+                ))}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-primaryText">
+                  {template.name}
+                  <span className="rounded-full bg-[#EEF5FF] px-1.5 py-0.5 text-[10px] font-medium text-[#17294B]">{KIND_LABEL[template.kind ?? "standard"]}</span>
+                  {locked && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[10px] font-medium text-[#8A5A0E]"><Lock className="h-2.5 w-2.5" aria-hidden /> Paid plan</span>}
+                </p>
+                <p className="mt-0.5 text-xs text-secondaryText">{template.description}</p>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center justify-end gap-1">
+              {confirm === template.id ? (
+                <>
+                  <button type="button" onClick={() => (onTemplate(template.id), setConfirm(null))} data-template-confirm={template.id} className="min-h-[36px] rounded-lg bg-[#041B5E] px-3 text-xs font-medium text-white">Replace my page</button>
+                  <button type="button" onClick={() => setConfirm(null)} className="min-h-[36px] rounded-lg border border-border px-3 text-xs text-secondaryText">Cancel</button>
+                </>
+              ) : (
+                <button type="button" disabled={locked} onClick={() => setConfirm(template.id)} data-template={template.id} className="min-h-[36px] rounded-lg border border-border px-3 text-xs font-medium text-[#17294B] hover:bg-[#F7F9FC] disabled:opacity-40">Use</button>
+              )}
+            </div>
+            {confirm === template.id && <p className="mt-2 text-xs text-[#8A5A0E]">This replaces the blocks and colours on the page. You can undo it.</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ───────────────────────── page settings ───────────────────────── */
 
-function PageSettings({ design, onChange, onTemplate }: { design: PageDesign; onChange: (next: PageDesign, coalesce?: string) => void; onTemplate: (id: string) => void }) {
+function PageSettings({ design, onChange, onTemplate, limits }: { design: PageDesign; onChange: (next: PageDesign, coalesce?: string) => void; onTemplate: (id: string) => void; limits: PageBuilderLimits }) {
   const [confirm, setConfirm] = useState<string | null>(null);
   const setTheme = <K extends keyof PageTheme>(key: K, value: PageTheme[K]) => onChange({ ...design, theme: { ...design.theme, [key]: value } }, `theme:${String(key)}`);
   return (
@@ -424,6 +610,7 @@ function PageSettings({ design, onChange, onTemplate }: { design: PageDesign; on
             { value: "md", label: "Narrow" },
             { value: "lg", label: "Standard" },
             { value: "xl", label: "Wide" },
+            { value: "full", label: "Full width" },
           ]}
         />
       </PanelSection>
@@ -444,33 +631,7 @@ function PageSettings({ design, onChange, onTemplate }: { design: PageDesign; on
         />
       </PanelSection>
       <PanelSection title="Start from a template">
-        <div className="space-y-2">
-          {PAGE_TEMPLATES.map((template) => (
-            <div key={template.id} className="rounded-xl border border-border bg-white p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-primaryText">{template.name}</p>
-                  <p className="mt-0.5 text-xs text-secondaryText">{template.description}</p>
-                </div>
-                {confirm === template.id ? (
-                  <span className="flex shrink-0 items-center gap-1">
-                    <button type="button" onClick={() => (onTemplate(template.id), setConfirm(null))} className="rounded-lg bg-[#041B5E] px-2 py-1 text-xs font-medium text-white">
-                      Replace
-                    </button>
-                    <button type="button" onClick={() => setConfirm(null)} className="rounded-lg border border-border px-2 py-1 text-xs text-secondaryText">
-                      Cancel
-                    </button>
-                  </span>
-                ) : (
-                  <button type="button" onClick={() => setConfirm(template.id)} data-template={template.id} className="shrink-0 rounded-lg border border-border px-2 py-1 text-xs font-medium text-[#17294B] hover:bg-[#F7F9FC]">
-                    Use
-                  </button>
-                )}
-              </div>
-              {confirm === template.id && <p className="mt-2 text-xs text-[#8A5A0E]">This replaces the blocks and colours on the page. You can undo it.</p>}
-            </div>
-          ))}
-        </div>
+        <TemplateGallery onTemplate={onTemplate} limits={limits} />
       </PanelSection>
     </div>
   );
@@ -478,7 +639,7 @@ function PageSettings({ design, onChange, onTemplate }: { design: PageDesign; on
 
 /* ───────────────────────── builder ───────────────────────── */
 
-export function PageBuilder({ webinarId, slug, title, isDraft, registration: initialRegistration, baseVersion: initialVersion, view }: Props) {
+export function PageBuilder({ webinarId, slug, title, isDraft, registration: initialRegistration, baseVersion: initialVersion, view, limits }: Props) {
   const startedFromSaved = Boolean(initialRegistration.page);
   const [design, setDesign] = useState<PageDesign>(() => initialRegistration.page ?? defaultPageDesign());
   // Undo/redo stacks live in a ref (they're only touched from event handlers); the counts drive the buttons.
@@ -496,11 +657,14 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
   const coalesceRef = useRef<{ key: string; at: number } | null>(null);
   const designRef = useRef(design);
 
-  const selected = design.blocks.find((b) => b.id === selectedId) ?? null;
+  const selected = findBlock(design.blocks, selectedId);
+  const total = countBlocks(design.blocks);
   const problems = useMemo(() => {
     const parsed = pageDesignSchema.safeParse(design);
-    return parsed.success ? [] : [...new Set(parsed.error.issues.map((issue) => issue.message))];
-  }, [design]);
+    const found = parsed.success ? [] : [...new Set(parsed.error.issues.map((issue) => issue.message))];
+    const plan = pageDesignPlanIssue(design, limits);
+    return plan ? [...found, plan] : found;
+  }, [design, limits]);
 
   /** Apply a change and record it for undo. Rapid edits to the same field collapse into one step. */
   const commit = useCallback((next: PageDesign, coalesce?: string) => {
@@ -534,44 +698,62 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
   const undo = useCallback(() => travel("undo"), [travel]);
   const redo = useCallback(() => travel("redo"), [travel]);
 
-  const updateBlock = useCallback((next: PageBlock, coalesce?: string) => commit({ ...designRef.current, blocks: designRef.current.blocks.map((b) => (b.id === next.id ? next : b)) }, coalesce), [commit]);
+  const updateBlock = useCallback((next: PageBlock, coalesce?: string) => commit({ ...designRef.current, blocks: mapBlock(designRef.current.blocks, next.id, () => next) }, coalesce), [commit]);
 
   const insertBlock = useCallback(
     (type: PageBlockType, index?: number) => {
       const current = designRef.current;
-      if (current.blocks.length >= MAX_PAGE_BLOCKS) return;
-      if (isSingleBlock(type) && current.blocks.some((b) => b.type === type)) return;
+      if (current.blocks.length >= MAX_PAGE_BLOCKS || countBlocks(current.blocks) >= limits.maxElements) return;
+      if (BLOCK_BY_TYPE[type].advanced && !limits.advancedElements) return;
+      if (isSingleBlock(type) && treeHasType(current.blocks, type)) return;
       const block = createBlock(type);
       const at = index === undefined || index < 0 ? current.blocks.length : index;
       const blocks = [...current.blocks.slice(0, at), block, ...current.blocks.slice(at)];
       commit({ ...current, blocks });
       setSelectedId(block.id);
     },
-    [commit],
+    [commit, limits],
   );
 
   const removeBlock = useCallback(
     (id: string) => {
       const current = designRef.current;
-      const block = current.blocks.find((b) => b.id === id);
-      if (!block || block.type === "form") return;
-      commit({ ...current, blocks: current.blocks.filter((b) => b.id !== id) });
-      setSelectedId((s) => (s === id ? null : s));
+      const block = findBlock(current.blocks, id);
+      // The registration form is required: it can't be deleted, nor can a columns block that holds it.
+      if (!block || containsType(block, "form")) return;
+      const parent = findParent(current.blocks, id);
+      commit({ ...current, blocks: removeBlockById(current.blocks, id) });
+      setSelectedId((s) => (s === id ? (parent?.parent.id ?? null) : s));
     },
     [commit],
   );
+
+  const insertChild = useCallback(
+    (columnId: string, type: PageBlockType) => {
+      const current = designRef.current;
+      if (countBlocks(current.blocks) >= limits.maxElements || type === "columns") return;
+      if (BLOCK_BY_TYPE[type].advanced && !limits.advancedElements) return;
+      if (isSingleBlock(type) && treeHasType(current.blocks, type)) return;
+      const child = createBlock(type);
+      commit({ ...current, blocks: insertIntoColumn(current.blocks, columnId, child) });
+      setSelectedId(child.id);
+    },
+    [commit, limits],
+  );
+
+  const moveChild = useCallback((id: string, direction: -1 | 1) => commit({ ...designRef.current, blocks: moveInColumn(designRef.current.blocks, id, direction) }), [commit]);
 
   const duplicateBlock = useCallback(
     (id: string) => {
       const current = designRef.current;
       const index = current.blocks.findIndex((b) => b.id === id);
       const block = current.blocks[index];
-      if (!block || isSingleBlock(block.type) || current.blocks.length >= MAX_PAGE_BLOCKS) return;
-      const copy: PageBlock = { ...block, id: blockId(), style: { ...block.style }, items: block.items.map((item) => ({ ...item, id: blockId("i") })) };
+      if (!block || isSingleBlock(block.type) || containsType(block, "form") || current.blocks.length >= MAX_PAGE_BLOCKS || countBlocks(current.blocks) + countBlocks([block]) > limits.maxElements) return;
+      const copy = cloneWithNewIds(block, blockId);
       commit({ ...current, blocks: [...current.blocks.slice(0, index + 1), copy, ...current.blocks.slice(index + 1)] });
       setSelectedId(copy.id);
     },
-    [commit],
+    [commit, limits],
   );
 
   const moveBlock = useCallback(
@@ -587,17 +769,17 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
 
   const applyTemplate = useCallback(
     (id: string) => {
-      const template = PAGE_TEMPLATES.find((t) => t.id === id);
-      if (!template) return;
+      const template = ALL_TEMPLATES.find((t) => t.id === id);
+      if (!template || (templateNeedsPaidPlan(template) && !limits.advancedElements)) return;
       commit({ enabled: true, ...template.build() });
       setSelectedId(null);
     },
-    [commit],
+    [commit, limits],
   );
 
   const save = useCallback(async (): Promise<boolean> => {
     const current = designRef.current;
-    if (!pageDesignSchema.safeParse(current).success) {
+    if (!pageDesignSchema.safeParse(current).success || pageDesignPlanIssue(current, limits)) {
       setSaveState({ status: "error", message: "Fix the problems listed in the panel before saving." });
       return false;
     }
@@ -622,7 +804,7 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
       setSaveState({ status: "error", message: "You appear to be offline. Your changes are still here; try saving again." });
       return false;
     }
-  }, [webinarId]);
+  }, [webinarId, limits]);
 
   const openPreview = useCallback(
     async (device: (typeof DEVICES)[number]["id"]) => {
@@ -702,6 +884,17 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
   };
 
   const ctx = { view, theme: design.theme, mode: "builder" as const, preview: true, source: "hosted" as const };
+  const tools: ColumnTools = {
+    limits,
+    isPlaced: (type) => treeHasType(design.blocks, type),
+    full: total >= limits.maxElements,
+    select: (id) => setSelectedId(id),
+    add: insertChild,
+    move: moveChild,
+    remove: removeBlock,
+    resize: (count) => selected && commit({ ...designRef.current, blocks: mapBlock(designRef.current.blocks, selected.id, (b) => resizeColumns(b, count, blockId)) }),
+  };
+  const selectedParent = selected ? findParent(design.blocks, selected.id) : null;
   const previewUrl = slug ? `/w/${slug}${isDraft ? "?preview=1" : ""}` : null;
   const activeDevice = DEVICES.find((d) => d.id === preview?.device);
 
@@ -750,18 +943,18 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
             {selected ? (
               <>
                 <div className="flex items-center gap-2 border-b border-border px-3 py-3">
-                  <button type="button" onClick={() => setSelectedId(null)} aria-label="Back to blocks" className="rounded-lg p-1.5 text-[#17294B] hover:bg-[#EEF5FF]">
+                  <button type="button" onClick={() => setSelectedId(selectedParent?.parent.id ?? null)} aria-label={selectedParent ? "Back to columns" : "Back to blocks"} className="rounded-lg p-1.5 text-[#17294B] hover:bg-[#EEF5FF]">
                     <ArrowLeft className="h-4 w-4" />
                   </button>
                   <p className="flex-1 text-sm font-semibold">Edit {BLOCK_BY_TYPE[selected.type].label.toLowerCase()}</p>
-                  {selected.type !== "form" && (
+                  {!containsType(selected, "form") && (
                     <button type="button" onClick={() => removeBlock(selected.id)} aria-label="Delete this block" className="rounded-lg p-1.5 text-[#B33A3A] hover:bg-[#FFF6F6]">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto">
-                  <BlockSettings key={selected.id} block={selected} view={view} onChange={updateBlock} />
+                  <BlockSettings key={selected.id} block={selected} view={view} onChange={updateBlock} tools={tools} />
                 </div>
               </>
             ) : (
@@ -777,20 +970,29 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
                   {tab === "blocks" ? (
                     <div className="space-y-4 p-4">
                       <p className="text-xs text-secondaryText">Drag a block onto the page, or click it to add it at the end. Click any block on the page to edit it.</p>
-                      <div className="grid grid-cols-2 gap-2" data-testid="block-palette">
-                        {BLOCK_DEFINITIONS.map((definition) => (
-                          <PaletteItem
-                            key={definition.type}
-                            type={definition.type}
-                            disabled={design.blocks.length >= MAX_PAGE_BLOCKS || (Boolean(definition.single) && design.blocks.some((b) => b.type === definition.type))}
-                            onAdd={() => insertBlock(definition.type)}
-                          />
+                      <div className="space-y-4" data-testid="block-palette">
+                        {(["Basics", "Content", "Social proof", "Layout"] as const).map((group) => (
+                          <div key={group}>
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-secondaryText">{group}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {BLOCK_DEFINITIONS.filter((d) => d.group === group).map((definition) => (
+                                <PaletteItem
+                                  key={definition.type}
+                                  type={definition.type}
+                                  locked={Boolean(definition.advanced) && !limits.advancedElements}
+                                  disabled={design.blocks.length >= MAX_PAGE_BLOCKS || total >= limits.maxElements || (Boolean(definition.single) && treeHasType(design.blocks, definition.type))}
+                                  onAdd={() => insertBlock(definition.type)}
+                                />
+                              ))}
+                            </div>
+                          </div>
                         ))}
+                        <p className="text-xs text-secondaryText" data-testid="element-count">{total} of {limits.maxElements} elements used on this plan.</p>
                       </div>
                       {!startedFromSaved && history.past === 0 && <Notice>This is a starting layout. It goes live for this webinar when you save.</Notice>}
                     </div>
                   ) : (
-                    <PageSettings design={design} onChange={commit} onTemplate={applyTemplate} />
+                    <PageSettings design={design} onChange={commit} onTemplate={applyTemplate} limits={limits} />
                   )}
                 </div>
               </>

@@ -1,3 +1,4 @@
+import { formatDay } from "@/lib/datetime";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,7 +28,7 @@ export default async function HelpArticlePage({ params }: { params: Promise<{ sl
       </nav>
       <h1 className="text-3xl md:text-4xl">{article.title}</h1>
       <p className="mt-3 text-lg text-secondaryText">{article.summary}</p>
-      <p className="mt-2 text-xs text-secondaryText">Updated {new Date(article.updated + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</p>
+      <p className="mt-2 text-xs text-secondaryText">Updated {formatDay(article.updated + "T12:00:00Z", "UTC")}</p>
       <div className="mt-8 rounded-[2rem] border border-border bg-white p-6 shadow-soft md:p-8">
         <ArticleBody blocks={article.body} />
       </div>

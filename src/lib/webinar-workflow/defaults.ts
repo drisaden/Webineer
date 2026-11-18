@@ -4,6 +4,18 @@ import type {
   WorkflowSectionKey,
 } from "@/types";
 
+/** Sent at the exact start time, so people who missed the reminders still get the join link when it matters. */
+export const DEFAULT_STARTING_EMAIL = {
+  enabled: true,
+  subject: "{{webinar_title}} is starting now",
+  body: "Hi {{first_name}},\n\n{{webinar_title}} is starting right now.\n\nJoin here: {{join_link}}",
+};
+
+/** The starting-now email for a webinar. Webinars saved before this existed use the default. */
+export function startingEmailOf(notifications: { startingEmail?: { enabled: boolean; subject: string; body: string } }) {
+  return notifications.startingEmail ?? DEFAULT_STARTING_EMAIL;
+}
+
 export const WORKFLOW_SECTIONS: { key: WorkflowSectionKey; label: string; description: string }[] = [
   { key: "configuration", label: "Configuration", description: "Identity, host and webinar mode" },
   { key: "schedules", label: "Schedules", description: "Dates, sessions and registration window" },
@@ -72,6 +84,8 @@ export function createDefaultWorkflowConfig(options: {
   hostName: string;
   hostEmail: string;
   timezone: string;
+  /** The workspace currency; prices start in this currency. */
+  currency?: "NGN" | "USD" | "EUR" | "GBP";
 }): WebinarWorkflowConfig {
   return {
     publicId: randomId("", 14),
@@ -166,6 +180,7 @@ export function createDefaultWorkflowConfig(options: {
         readiness: true,
         recipientEmail: options.hostEmail,
       },
+      startingEmail: { ...DEFAULT_STARTING_EMAIL },
       thankYouEmail: {
         enabled: true,
         minutesAfter: 30,
@@ -181,7 +196,7 @@ export function createDefaultWorkflowConfig(options: {
     },
     integrations: {
       video: { provider: "youtube", url: "", autoplay: false, muted: false, showControls: true },
-      payment: { enabled: false, price: 0, currency: "NGN" },
+      payment: { enabled: false, price: 0, currency: options.currency ?? "NGN" },
       analytics: { googleAnalyticsId: "", metaPixelId: "" },
       webhook: { enabled: false, url: "", secret: "" },
     },

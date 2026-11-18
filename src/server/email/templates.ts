@@ -1,3 +1,4 @@
+import { formatDateTime, formatDay } from "@/lib/datetime";
 import { escapeHtml } from "@/lib/webinar-workflow/email-render";
 import { button, fallbackLink, renderLayout } from "./layout";
 
@@ -81,14 +82,14 @@ export function renderReceipt(opts: {
   periodEnd?: Date | null;
   testMode?: boolean;
 }): RenderedEmail {
-  const date = opts.paidAt.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " (WAT)";
+  const date = formatDateTime(opts.paidAt, "Africa/Lagos") + " (WAT)";
   const rows: [string, string][] = [
     [opts.kind === "ticket" ? "Webinar" : "Plan", opts.itemTitle],
     ["Amount", money(opts.amount, opts.currency)],
     ["Reference", opts.reference],
     ["Date", date],
   ];
-  if (opts.periodEnd) rows.push(["Active until", opts.periodEnd.toLocaleDateString("en-GB", { dateStyle: "long" })]);
+  if (opts.periodEnd) rows.push(["Active until", formatDay(opts.periodEnd, "Africa/Lagos")]);
   const subject = opts.kind === "ticket" ? `Payment received: ${opts.itemTitle}` : `Receipt: Webineer ${opts.itemTitle}`;
   const intro = opts.kind === "ticket" ? "Thanks — your payment was received and your seat is confirmed." : "Thanks — your payment was received and your plan is active.";
   const first = opts.name.split(/\s+/)[0] || "there";
@@ -105,6 +106,23 @@ export function renderReceipt(opts: {
   ].join("\n");
   const text = [`Hi ${first},`, "", intro, "", ...rows.map(([k, v]) => `${k}: ${v}`), opts.link ? `\n${opts.linkLabel}: ${opts.link}` : "", opts.testMode ? "\nTest payment — no real money was charged." : ""].join("\n");
   return { subject, html: renderLayout({ contentHtml: content, preheader: intro }), text };
+}
+
+/** Sent once when someone confirms their account. Points to the three things that get a first webinar live. */
+export function renderWelcome(opts: { name?: string | null; workspaceName?: string | null; dashboardUrl: string; helpUrl: string }): RenderedEmail {
+  const first = firstNameOf(opts.name) ?? "there";
+  const steps = ["Create your first webinar and choose when it runs.", "Design the registration page people will see.", "Publish it and share the link. Reminders go out automatically."];
+  const intro = opts.workspaceName ? `Your workspace “${opts.workspaceName}” is ready.` : "Your workspace is ready.";
+  const content = [
+    `<p>Hi ${escapeHtml(first)},</p>`,
+    `<p>Welcome to Webineer. ${escapeHtml(intro)}</p>`,
+    `<p style="margin-bottom:4px;"><strong>Getting started takes three steps:</strong></p>`,
+    `<ol style="padding-left:20px;margin-top:0;">${steps.map((s) => `<li style="margin:6px 0;">${escapeHtml(s)}</li>`).join("")}</ol>`,
+    button(opts.dashboardUrl, "Open your dashboard"),
+    `<p style="font-size:13px;color:#64748B;">Stuck on something? The <a href="${escapeHtml(opts.helpUrl)}" style="color:#0A7F6B;">help center</a> has step-by-step guides, and you can chat with us from your dashboard.</p>`,
+  ].join("\n");
+  const text = [`Hi ${first},`, "", `Welcome to Webineer. ${intro}`, "", "Getting started takes three steps:", ...steps.map((s, i) => `${i + 1}. ${s}`), "", `Open your dashboard: ${opts.dashboardUrl}`, `Help center: ${opts.helpUrl}`].join("\n");
+  return { subject: "Welcome to Webineer", html: renderLayout({ contentHtml: content, preheader: intro }), text };
 }
 
 /** Wrap a workflow/system body fragment (already escaped HTML) in the branded layout. */

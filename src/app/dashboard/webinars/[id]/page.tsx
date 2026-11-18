@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/datetime";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarClock, CheckCircle2, Eye, LayoutTemplate, Play, Settings2, Users, Video } from "lucide-react";
@@ -6,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getEmbedUrl } from "@/providers/video";
 import { getStore } from "@/server/repositories";
-import { getCurrentUser } from "@/lib/auth/demo-session";
+import { getCurrentUser, userCan } from "@/lib/auth/demo-session";
 import { DeleteWebinarButton } from "@/components/webinars/delete-webinar-button";
+import { ShareLinks } from "@/components/webinars/share-links";
+import { getAuthMode } from "@/lib/supabase/config";
+import { appUrl } from "@/server/email/receipts";
+import { shortLinkFor } from "@/server/short-links/service";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +29,7 @@ export default async function WebinarDetailPage({
     notFound();
   }
 
+  const short = getAuthMode() === "supabase" ? await shortLinkFor(user.workspaceId, webinar.id).catch(() => null) : null;
   const embedUrl = getEmbedUrl(webinar.videoSource.provider, webinar.videoSource.url);
 
   return (
@@ -39,7 +45,7 @@ export default async function WebinarDetailPage({
             <p className="mt-1 text-sm text-white/70">{webinar.description}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {user?.role === "owner" && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
+            {userCan(user, "webinar.delete") && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
             <Button asChild variant="secondary" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
               <Link href={`/dashboard/webinars/${webinar.id}/setup`}>
                 <Settings2 className="mr-2 h-4 w-4" /> Edit setup
@@ -88,7 +94,7 @@ export default async function WebinarDetailPage({
               <div className="mt-4 space-y-4 text-sm text-secondaryText">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <span className="flex items-center gap-2"><CalendarClock className="h-4 w-4 text-[#16D6B2]" /> Starts at</span>
-                  <span className="font-medium text-primaryText">{new Date(webinar.schedule.startsAt).toLocaleString()}</span>
+                  <span className="font-medium text-primaryText">{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <span className="flex items-center gap-2"><Users className="h-4 w-4 text-[#16D6B2]" /> Registrations</span>
@@ -106,10 +112,7 @@ export default async function WebinarDetailPage({
 
               {webinar.slug && (
                 <div className="mt-6 pt-4 border-t border-border">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-secondaryText mb-2">Public Registration URL</p>
-                  <Link href={`/w/${webinar.slug}`} className="tap block max-w-full truncate text-sm font-medium text-[#0A7F6B] hover:underline">
-                    /w/{webinar.slug}
-                  </Link>
+                  <ShareLinks webinarId={webinar.id} pageUrl={`${appUrl()}/w/${webinar.slug}`} initialShort={short?.url ?? null} />
                 </div>
               )}
             </div>

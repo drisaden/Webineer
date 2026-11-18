@@ -132,6 +132,7 @@ export const sectionSchemas = {
       readiness: z.boolean(),
       recipientEmail: str(200),
     }),
+    startingEmail: emailMessage.optional(),
     thankYouEmail: emailMessage.extend({ minutesAfter: z.number().int().min(0).max(10080) }),
     replayEmail: emailMessage,
     followUps: z
@@ -150,6 +151,20 @@ export const sectionSchemas = {
       enabled: z.boolean(),
       price: z.number().min(0).max(100_000_000),
       currency: z.enum(["NGN", "USD", "EUR", "GBP"]),
+      tiers: z.array(z.object({ id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), name: str(80), price: z.number().min(0).max(100_000_000), description: str(300) }).strict()).max(5).optional(),
+      discountCodes: z
+        .array(
+          z.object({
+            code: z.string().max(24),
+            percentOff: z.number().min(0).max(100).optional(),
+            amountOff: z.number().min(0).max(100_000_000).optional(),
+            maxUses: z.number().int().min(1).max(1_000_000).nullable(),
+            expiresAt: z.string().max(30).nullable(),
+            active: z.boolean(),
+          }).strict(),
+        )
+        .max(20)
+        .optional(),
     }),
     analytics: z.object({
       googleAnalyticsId: str(30),
@@ -240,6 +255,9 @@ export const publicRegistrationSchema = z.object({
   website: z.string().max(200).optional().default(""),
   /** Client render timestamp (ms) used for a minimum fill-time check. */
   renderedAt: z.number().int().optional(),
+  /** Ticket option the visitor chose (only used when the webinar has options). */
+  tierId: z.string().max(40).optional().default(""),
+  discountCode: z.string().max(40).optional().default(""),
 });
 
 export type PublicRegistrationInput = z.infer<typeof publicRegistrationSchema>;

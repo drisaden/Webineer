@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +53,7 @@ export default async function RegistrantsPage() {
                       <td className="py-3 pr-3 text-secondaryText">{SOURCE_LABEL[r.source] ?? r.source}</td>
                       <td className="py-3 pr-3"><Badge label={r.status} tone={r.status === "attended" || r.status === "converted" ? "success" : r.status === "cancelled" ? "warning" : "info"} /></td>
                       <td className="py-3 pr-3 capitalize text-secondaryText">{r.paymentStatus ?? "free"}</td>
-                      <td className="py-3 text-secondaryText">{new Date(r.registeredAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</td>
+                      <td className="py-3 text-secondaryText">{formatDateTime(r.registeredAt, DISPLAY_TZ)}</td>
                     </tr>
                   ))}
                 </tbody>

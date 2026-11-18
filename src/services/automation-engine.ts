@@ -1,3 +1,4 @@
+import { formatDay, formatTime } from "@/lib/datetime";
 import type {
   AutomationActionType,
   EmailTemplateType,
@@ -234,8 +235,8 @@ export class AutomationEngine {
                   first_name: data.recipientName?.split(" ")[0] || "Friend",
                   last_name: data.recipientName?.split(" ")[1] || "",
                   webinar_title: webinar?.title || "Webinar Session",
-                  webinar_date: webinar?.schedule.startsAt ? new Date(webinar.schedule.startsAt).toLocaleDateString() : "Upcoming",
-                  webinar_time: webinar?.schedule.startsAt ? new Date(webinar.schedule.startsAt).toLocaleTimeString() : "TBD",
+                  webinar_date: webinar?.schedule.startsAt ? formatDay(webinar.schedule.startsAt) : "Upcoming",
+                  webinar_time: webinar?.schedule.startsAt ? formatTime(webinar.schedule.startsAt) : "TBD",
                   webinar_timezone: webinar?.schedule.timezone || "UTC",
                   webinar_link: webinar?.slug ? `/w/${webinar.slug}` : "/dashboard",
                   replay_link: webinar?.slug ? `/room/${webinar.slug}` : "/dashboard",

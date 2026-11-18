@@ -1,0 +1,12 @@
+Add earnings, payouts, page builder, ticket options and launch fixes
+
+- Earnings ledger, Payments page, manual payouts with admin queue, 10% platform fee
+- Currency defaults from the host's country
+- Page builder: 25 element types, columns, visibility per device, 15 templates, plan limits
+- Ticket options (tiers) and discount codes, priced on the server
+- Mobile countdown fixes, welcome email, image resizing, friendly dates, short links
+
+Migrations to apply before deploy: 20261118200000_short_links, 20261118210000_earnings
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01JyKv7kWLCNnxuswsGnpzEr

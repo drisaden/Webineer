@@ -155,11 +155,10 @@ export function DashboardOverview({ data }: { data: DashboardOverviewData }) {
 
           <Card className="glass-panel p-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg">Coming soon</h3>
-              <Badge label={data.demo ? "Demo" : "Roadmap"} tone="warning" />
+              <h3 className="text-lg">Need a hand?</h3>
             </div>
             <div className="mt-4 space-y-3 text-sm text-secondaryText">
-              <p>Revenue attribution, custom domains and advanced automation are on the roadmap.</p>
+              <p>Browse the guides, chat with an agent or request a callback from <a href="/dashboard/help" className="font-medium text-[#17294B] underline">Help &amp; Support</a>.</p>
             </div>
           </Card>
         </section>

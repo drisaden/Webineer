@@ -1,6 +1,7 @@
 import { getPrisma } from "@/server/db/prisma";
 import { pruneLiveData } from "@/server/live/service";
 import { getStore } from "@/server/repositories";
+import { startingEmailOf } from "@/lib/webinar-workflow/defaults";
 import { primarySessionWindow, nextEvergreenSession } from "@/lib/webinar-workflow/sync";
 import { resolveSessions, zonedToUtc } from "@/lib/webinar-workflow/time";
 import { sendWorkflowEmail, sessionStartFor } from "@/services/workflow-notifications";
@@ -21,8 +22,10 @@ const TICK_LOOKAHEAD_MS = 15 * 60 * 1000;
 /** Reminders before a session are pointless once it has started; after-session emails may run late. */
 const MAX_LATE_BEFORE_MS = 60 * 60 * 1000;
 const MAX_LATE_AFTER_MS = 24 * 60 * 60 * 1000;
+/** "Starting now" is only useful while the session is young. */
+export const MAX_LATE_STARTING_MS = 15 * 60 * 1000;
 
-type Kind = "reminder" | "thank_you" | "replay" | "follow_up";
+type Kind = "reminder" | "starting" | "thank_you" | "replay" | "follow_up";
 export interface PlannedNotification {
   key: string;
   kind: Kind;
@@ -60,6 +63,7 @@ export function planForRegistration(webinar: Webinar, registration: Registration
     const type: EmailTemplateType = reminder.minutesBefore >= 1440 ? "reminder_24h" : reminder.minutesBefore >= 60 ? "reminder_1h" : "reminder_15m";
     add(reminder.id, "reminder", new Date(start.getTime() - reminder.minutesBefore * 60_000), reminder, type);
   }
+  add("starting", "starting", start, startingEmailOf(config.notifications), "starting_now");
   add("thank_you", "thank_you", new Date(end.getTime() + config.notifications.thankYouEmail.minutesAfter * 60_000), config.notifications.thankYouEmail, "thank_you");
   if (config.replay.enabled) add("replay", "replay", end, config.notifications.replayEmail, "replay_available");
   for (const followUp of config.notifications.followUps) {
@@ -77,6 +81,10 @@ export function stillSendable(webinar: Webinar, item: PlannedNotification, now: 
     // Registered after this reminder was due: the confirmation email already covered it.
     if (item.registeredAt.getTime() > item.dueAt.getTime()) return { ok: false, reason: "registered after reminder time" };
     if (late > MAX_LATE_BEFORE_MS) return { ok: false, reason: "too late" };
+  } else if (item.kind === "starting") {
+    // Sent on the dot. If the queue was down, a short grace period still beats an email about a finished session.
+    if (late > MAX_LATE_STARTING_MS) return { ok: false, reason: "too late" };
+    if (item.registeredAt.getTime() > item.dueAt.getTime()) return { ok: false, reason: "registered after start time" };
   } else if (late > MAX_LATE_AFTER_MS) {
     return { ok: false, reason: "too late" };
   }

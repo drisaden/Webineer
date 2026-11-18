@@ -26,8 +26,7 @@ export interface TicketLedger {
   rows: LedgerRow[];
 }
 
-const SYMBOLS: Record<string, string> = { NGN: "₦", USD: "$", EUR: "€", GBP: "£" };
-export const formatMoney = (amount: number, currency: string) => `${SYMBOLS[currency] ?? `${currency} `}${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+export { formatMoney } from "@/lib/money";
 
 /** Ticket payments for the active workspace (subscription payments are shown under Billing). */
 export async function getTicketLedger(limit = 200): Promise<TicketLedger | null> {

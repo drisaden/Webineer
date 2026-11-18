@@ -160,6 +160,22 @@ enum PaymentProvider {
   SIMULATED
 }
 
+enum LedgerEntryType {
+  SALE
+  REFUND
+  PAYOUT
+  PAYOUT_REVERSAL
+  ADJUSTMENT
+}
+
+enum PayoutStatus {
+  REQUESTED
+  APPROVED
+  PAID
+  REJECTED
+  CANCELLED
+}
+
 enum PaymentStatus {
   PENDING
   SUCCESSFUL
@@ -280,6 +296,9 @@ model Organization {
   registrations   Registration[]
   attendees       Attendee[]
   payments        Payment[]
+  ledgerEntries   LedgerEntry[]
+  payoutAccount   PayoutAccount?
+  payoutRequests  PayoutRequest[]
   subscriptions   Subscription[]
   emailLogs       EmailLog[]
   jobs            AutomationJob[]
@@ -379,6 +398,7 @@ model Webinar {
   liveReactions LiveReaction[]
   livePresence  LivePresence[]
   liveState     LiveRoomState?
+  shortLink     ShortLink?
 
   /// Target for tenant-safe composite foreign keys from child tables.
   @@unique([id, organizationId])
@@ -386,6 +406,22 @@ model Webinar {
   @@index([organizationId, startsAt])
   @@index([status, startsAt])
   @@map("webinars")
+}
+
+/// One short, shareable link per webinar (/s/{code}). Resolves to the webinar's current public page.
+model ShortLink {
+  id             String    @id @default(uuid()) @db.Uuid
+  code           String    @unique
+  organizationId String    @map("organization_id") @db.Uuid
+  webinarId      String    @unique @map("webinar_id") @db.Uuid
+  clicks         Int       @default(0)
+  lastClickedAt  DateTime? @map("last_clicked_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  webinar Webinar @relation(fields: [webinarId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@unique([webinarId, organizationId])
+  @@map("short_links")
 }
 
 enum LiveMessageKind {
@@ -776,6 +812,7 @@ model Payment {
   registration Registration?  @relation(fields: [registrationId], references: [id], onDelete: SetNull)
   subscription Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   events       PaymentEvent[]
+  ledgerEntries LedgerEntry[]
 
   @@index([organizationId, purpose, createdAt])
   @@index([registrationId])
@@ -960,4 +997,88 @@ model RateLimit {
 
   @@index([windowStart])
   @@map("rate_limits")
+}
+
+/// Every money movement for a host. Balances are always summed from here, never stored.
+/// Amounts are signed: sales are positive, refunds and payouts are negative.
+model LedgerEntry {
+  id             String          @id @default(uuid()) @db.Uuid
+  organizationId String          @map("organization_id") @db.Uuid
+  type           LedgerEntryType
+  currency       CurrencyCode
+  /// What the buyer paid (sales and refunds only).
+  gross          Decimal         @default(0) @db.Decimal(14, 2)
+  /// Techra's platform fee on this entry (positive number, already taken out of net).
+  platformFee    Decimal         @default(0) @map("platform_fee") @db.Decimal(14, 2)
+  /// Flutterwave's processing fee, recorded for Techra's own reconciliation.
+  gatewayFee     Decimal         @default(0) @map("gateway_fee") @db.Decimal(14, 2)
+  /// Signed change to the host balance.
+  net            Decimal         @db.Decimal(14, 2)
+  /// When the money becomes withdrawable.
+  availableAt    DateTime        @map("available_at") @db.Timestamptz(6)
+  description    String
+  paymentId      String?         @map("payment_id") @db.Uuid
+  webinarId      String?         @map("webinar_id") @db.Uuid
+  payoutId       String?         @map("payout_id") @db.Uuid
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  payout       PayoutRequest? @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, currency, availableAt])
+  @@map("ledger_entries")
+}
+
+model PayoutAccount {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @unique @map("organization_id") @db.Uuid
+  bankName       String   @map("bank_name")
+  bankCode       String?  @map("bank_code")
+  accountNumber  String   @map("account_number")
+  accountName    String   @map("account_name")
+  /// manual (request when you want) or weekly/monthly reminders for the admin queue later.
+  schedule       String   @default("manual")
+  minimumPayout  Decimal  @default(0) @map("minimum_payout") @db.Decimal(14, 2)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("payout_accounts")
+}
+
+model PayoutRequest {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  amount         Decimal      @db.Decimal(14, 2)
+  currency       CurrencyCode
+  status         PayoutStatus @default(REQUESTED)
+  /// Bank details as they were when the request was made.
+  bankSnapshot   Json         @map("bank_snapshot")
+  requestedById  String?      @map("requested_by_id") @db.Uuid
+  idempotencyKey String       @unique @map("idempotency_key")
+  reference      String?
+  adminNote      String?      @map("admin_note")
+  processedById  String?      @map("processed_by_id") @db.Uuid
+  processedAt    DateTime?    @map("processed_at") @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entries      LedgerEntry[]
+
+  @@index([organizationId, createdAt])
+  @@index([status, createdAt])
+  @@map("payout_requests")
+}
+
+/// Platform-wide settings an administrator can change (the platform fee, payout hold days).
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_settings")
 }

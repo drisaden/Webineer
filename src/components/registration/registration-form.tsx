@@ -45,6 +45,8 @@ export function RegistrationForm({
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [values, setValues] = useState({ name: "", email: "", phone: "", sessionId: view.sessions[0]?.id ?? "", website: "" });
+  const [tierId, setTierId] = useState(view.tickets.length === 1 ? view.tickets[0].id : "");
+  const [discountCode, setDiscountCode] = useState("");
   const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
   const renderedAt = useRef<number>(0);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -100,6 +102,8 @@ export function RegistrationForm({
           embedOrigin: embedded ? detectEmbedOrigin() : "",
           website: values.website,
           renderedAt: renderedAt.current,
+          tierId,
+          discountCode: discountCode.trim(),
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -228,6 +232,31 @@ export function RegistrationForm({
             );
           })}
 
+          {view.tickets.length > 0 && (
+            <fieldset className="space-y-2" data-testid="ticket-options">
+              <legend className="text-sm font-medium text-primaryText">Ticket</legend>
+              {view.tickets.map((t) => (
+                <label key={t.id} className={`flex min-h-[44px] cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm ${tierId === t.id ? "border-[#041B5E] bg-[#F4F7FF]" : "border-[#E3E8F2]"}`}>
+                  <input type="radio" name="ticket" value={t.id} checked={tierId === t.id} onChange={() => setTierId(t.id)} className="mt-1" />
+                  <span className="flex-1">
+                    <span className="block font-medium text-primaryText">{t.name}</span>
+                    {t.description && <span className="block text-xs text-secondaryText">{t.description}</span>}
+                  </span>
+                  <span className="font-semibold text-primaryText">{t.price > 0 ? new Intl.NumberFormat("en", { style: "currency", currency: view.price?.currency ?? "NGN" }).format(t.price) : "Free"}</span>
+                </label>
+              ))}
+              {fieldErrorEl("tierId")}
+            </fieldset>
+          )}
+
+          {view.hasDiscountCodes && (
+            <div>
+              <label htmlFor="reg-code" className="mb-1 block text-sm font-medium text-primaryText">Discount code <span className="font-normal text-secondaryText">(optional)</span></label>
+              <input id="reg-code" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} maxLength={40} autoComplete="off" className="h-11 w-full rounded-xl border border-[#E3E8F2] px-3 text-sm uppercase" />
+              {fieldErrorEl("discountCode")}
+            </div>
+          )}
+
           {status.kind === "error" && (
             <p id="form-error" role="alert" className="rounded-xl border border-[#F5D7D7] bg-[#FFF6F6] p-3 text-sm text-[#B33A3A]">
               {status.message}
@@ -236,7 +265,7 @@ export function RegistrationForm({
 
           {view.price && (
             <p className="text-sm text-secondaryText">
-              Price: <strong className="text-primaryText">{new Intl.NumberFormat("en", { style: "currency", currency: view.price.currency }).format(view.price.amount)}</strong>
+              {view.price.from ? "From" : "Price"}: <strong className="text-primaryText">{view.price.amount > 0 ? new Intl.NumberFormat("en", { style: "currency", currency: view.price.currency }).format(view.price.amount) : "Free"}</strong>
               {view.price.testMode && <span className="ml-2 text-xs text-[#8A5A0E]">(test mode)</span>}
             </p>
           )}
@@ -248,7 +277,7 @@ export function RegistrationForm({
             style={{ background: view.accentColor }}
           >
             {status.kind === "submitting" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-            {status.kind === "submitting" ? "Registering…" : view.price ? `${view.buttonText} · Pay` : view.buttonText}
+            {status.kind === "submitting" ? "Registering…" : view.price && (view.tickets.length === 0 || (view.tickets.find((t) => t.id === tierId)?.price ?? 1) > 0) ? `${view.buttonText} · Pay` : view.buttonText}
           </button>
           <p className="text-center text-[11px] text-secondaryText">Your details are used only for this webinar and its emails.</p>
         </form>

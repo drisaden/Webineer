@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createUser, db, resetDatabase } from "./helpers";
 import { createOrganizationWithOwner } from "../../src/server/db/organizations";
 import { claimJobs, enqueueJob, runDueJobs } from "../../src/server/jobs/queue";
-import { JOB_HANDLERS, lifecycleStatus, planForRegistration, planNotifications, stillSendable, tick } from "../../src/server/jobs/automation";
+import { JOB_HANDLERS, MAX_LATE_STARTING_MS, lifecycleStatus, planForRegistration, planNotifications, stillSendable, tick } from "../../src/server/jobs/automation";
 import { prismaStore as store } from "../../src/server/repositories/prisma-store";
 import { createDefaultWorkflowConfig } from "../../src/lib/webinar-workflow/defaults";
 import { applyWorkflowToWebinar } from "../../src/lib/webinar-workflow/sync";
@@ -242,5 +242,61 @@ describe("maintenance", () => {
     assert.equal((await tick({ budgetMs: 5_000 })).maintenanceEnqueued, 0);
     assert.equal(await db.automationJob.count({ where: { status: "SUCCEEDED" } }), 6);
     assert.equal(await db.automationJob.count({ where: { status: { in: ["FAILED", "PENDING", "RUNNING"] } } }), 0);
+  });
+});
+
+describe("starting-now email", () => {
+  test("is planned for the exact start time, separately from the reminders", async () => {
+    const startsAt = new Date(Date.now() + 3 * 3600e3);
+    const { webinar, registration } = await setup({ startsAt });
+    const items = planForRegistration(webinar, registration);
+    const starting = items.find((i) => i.kind === "starting")!;
+    assert.equal(starting.dueAt.getTime(), startsAt.getTime());
+    assert.equal(starting.templateType, "starting_now");
+    assert.notEqual(starting.key, items.find((i) => i.kind === "reminder")!.key);
+    assert.match(starting.message.subject, /starting now/i);
+    assert.match(starting.message.body, /\{\{join_link\}\}/);
+  });
+
+  test("older webinars without the setting get it by default; it can be switched off", async () => {
+    const legacy = await setup({ startsAt: new Date(Date.now() + 3 * 3600e3), edit: (c) => { delete (c.notifications as { startingEmail?: unknown }).startingEmail; } });
+    assert.ok(planForRegistration(legacy.webinar, legacy.registration).some((i) => i.kind === "starting"));
+    const off = await setup({ startsAt: new Date(Date.now() + 3 * 3600e3), edit: (c) => { c.notifications.startingEmail = { ...c.notifications.startingEmail!, enabled: false }; } });
+    assert.ok(!planForRegistration(off.webinar, off.registration).some((i) => i.kind === "starting"));
+  });
+
+  test("send rules: not early, short grace after the start, never for late registrants", async () => {
+    const { webinar, registration } = await setup({ startsAt: new Date(Date.now() + 3 * 3600e3) });
+    const starting = planForRegistration(webinar, registration).find((i) => i.kind === "starting")!;
+    assert.equal(stillSendable(webinar, starting, new Date(starting.dueAt.getTime() - 1000)).ok, false, "not before the start");
+    assert.equal(stillSendable(webinar, starting, starting.dueAt).ok, true, "exactly at the start");
+    assert.equal(stillSendable(webinar, starting, new Date(starting.dueAt.getTime() + MAX_LATE_STARTING_MS)).ok, true);
+    assert.equal(stillSendable(webinar, starting, new Date(starting.dueAt.getTime() + MAX_LATE_STARTING_MS + 1000)).ok, false, "too late to be useful");
+    assert.equal(stillSendable(webinar, { ...starting, registeredAt: new Date(starting.dueAt.getTime() + 1000) }, starting.dueAt).ok, false, "joined after the start");
+  });
+
+  test("goes out at the start time, once, in addition to the reminder", async () => {
+    // The session started 2 minutes ago, so the starting email is due now. The 1-hour reminder is long past.
+    const { registration } = await setup({ startsAt: new Date(Date.now() - 2 * 60_000) });
+    const planned = await planNotifications();
+    assert.equal(planned.planned, 1, "only the starting email is still worth sending");
+    assert.equal((await runDueJobs(JOB_HANDLERS)).succeeded, 1);
+    const logs = await db.emailLog.findMany({ where: { registrationId: registration.id } });
+    assert.deepEqual(logs.map((l) => l.template), ["starting_now"]);
+    assert.match(logs[0].dedupeKey ?? "", /:starting$/);
+    assert.match(logs[0].subject, /starting now/i);
+    await planNotifications();
+    await runDueJobs(JOB_HANDLERS);
+    assert.equal(await db.emailLog.count({ where: { registrationId: registration.id, template: "starting_now" } }), 1, "never twice");
+  });
+
+  test("not sent when the session is rescheduled after planning", async () => {
+    const startsAt = new Date(Date.now() - 60_000);
+    const { registration } = await setup({ startsAt });
+    assert.equal((await planNotifications()).planned, 1);
+    const later = new Date(Date.now() + 2 * 86400e3);
+    await store.updateRegistration(registration.id, { metadata: { ...registration.metadata, sessionStartsAt: later.toISOString() }, selectedSessionSlot: later.toISOString() });
+    await runDueJobs(JOB_HANDLERS);
+    assert.equal(await db.emailLog.count({ where: { template: "starting_now" } }), 0);
   });
 });

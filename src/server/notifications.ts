@@ -40,6 +40,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   reminder_24h: "24-hour reminder",
   reminder_1h: "1-hour reminder",
   reminder_15m: "15-minute reminder",
+  starting_now: "Starting-now email",
   thank_you: "Thank-you email",
   replay: "Replay email",
   follow_up: "Follow-up email",

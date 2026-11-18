@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTime } from "@/lib/datetime";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, CheckCircle2, Video, Wand2 } from "lucide-react";
@@ -153,7 +154,7 @@ export function WebinarCreationForm() {
           <div className="mt-4 space-y-3 text-sm text-secondaryText">
             <div className="flex items-center justify-between">
               <span>Schedule</span>
-              <span className="font-medium text-primaryText">{new Date(form.date).toLocaleString()}</span>
+              <span className="font-medium text-primaryText">{formatDateTime(form.date)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Registrations</span>

@@ -1,3 +1,4 @@
+import { startingEmailOf } from "@/lib/webinar-workflow/defaults";
 import { getAuthMode } from "@/lib/supabase/config";
 import { getAppSession } from "@/server/auth/session";
 import { getPrisma } from "@/server/db/prisma";
@@ -59,6 +60,7 @@ export async function getAutomationOverview(): Promise<AutomationOverview | null
       const steps = [
         n.confirmation.enabled ? "confirmation" : null,
         ...n.reminders.filter((r) => r.enabled).map((r) => (r.minutesBefore >= 60 ? `reminder ${Math.round(r.minutesBefore / 60)}h before` : `reminder ${r.minutesBefore}m before`)),
+        startingEmailOf(n).enabled ? "starting now" : null,
         n.thankYouEmail.enabled ? "thank you" : null,
         w.workflow!.replay.enabled && n.replayEmail.enabled ? "replay" : null,
         ...n.followUps.filter((f) => f.enabled).map((f) => `follow-up +${f.minutesAfter >= 60 ? `${Math.round(f.minutesAfter / 60)}h` : `${f.minutesAfter}m`}`),

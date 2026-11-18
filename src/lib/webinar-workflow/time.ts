@@ -1,3 +1,4 @@
+import { formatDateTime, zoneName } from "@/lib/datetime";
 import type { SchedulesSettings, WorkflowRecurrence } from "@/types";
 
 /** Hard cap on generated occurrences so recurring schedules stay bounded. */
@@ -125,6 +126,8 @@ export function formatInZone(iso: string | Date, timeZone: string, options?: Int
   const date = typeof iso === "string" ? new Date(iso) : iso;
   if (Number.isNaN(date.getTime())) return "";
   const tz = isValidTimeZone(timeZone) ? timeZone : "UTC";
+  // Default style for everything attendees and hosts read: "15th Nov., 2026 6:40am WAT".
+  if (!options) return `${formatDateTime(date, tz)} ${zoneName(date, tz)}`.trim();
   return new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     weekday: "short",

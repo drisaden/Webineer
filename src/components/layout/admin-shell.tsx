@@ -31,6 +31,7 @@ const navItems = [
   { label: "Contacts", href: "/admin/contacts", icon: MessageSquareText },
   { label: "Landing Pages", href: "/admin/landing-pages", icon: FileText },
   { label: "Transactions", href: "/admin/transactions", icon: Wallet },
+  { label: "Payouts", href: "/admin/payouts", icon: Wallet },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
   { label: "Integrations", href: "/admin/integrations", icon: Workflow },
   { label: "Email", href: "/admin/email", icon: Bell },

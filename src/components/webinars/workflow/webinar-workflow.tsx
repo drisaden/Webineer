@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTime } from "@/lib/datetime";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useClientOrigin } from "@/lib/use-client-value";
 import Link from "next/link";
@@ -438,7 +439,7 @@ function SaveIndicator({
   } else if (state.status === "saved") {
     content = (
       <span className="inline-flex items-center gap-1.5 text-[#0F7B52]">
-        <CheckCircle2 className="h-3.5 w-3.5" /> All changes saved at {state.at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        <CheckCircle2 className="h-3.5 w-3.5" /> All changes saved at {formatTime(state.at)}
       </span>
     );
   } else {

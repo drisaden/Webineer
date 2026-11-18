@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { adminTransaction } from "@/server/admin/data";
@@ -40,7 +42,7 @@ export default async function AdminTransactionDetailPage({ params }: { params: P
         <div className="mt-4 space-y-2 text-sm text-secondaryText">
           <p>• Payment status: {txn.status}</p>
           {failureReason && <p>• Reason: {failureReason}</p>}
-          {events.length > 0 ? events.map((e, i) => <p key={i}>• {e.type} · {new Date(e.at).toLocaleString()}</p>) : <p>• Verified server-side with the provider before any access is granted.</p>}
+          {events.length > 0 ? events.map((e, i) => <p key={i}>• {e.type} · {formatDateTime(e.at, DISPLAY_TZ)}</p>) : <p>• Verified server-side with the provider before any access is granted.</p>}
           <p>• Sensitive financial tokens remain masked and are never exposed to the browser.</p>
         </div>
       </Card>

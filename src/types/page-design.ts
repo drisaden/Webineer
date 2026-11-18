@@ -16,7 +16,33 @@ export type PageBlockType =
   | "testimonials"
   | "cta"
   | "form"
-  | "divider";
+  | "divider"
+  | "heading"
+  | "button"
+  | "iconbox"
+  | "pricing"
+  | "stats"
+  | "timeline"
+  | "gallery"
+  | "logos"
+  | "tabs"
+  | "social"
+  | "map"
+  | "columns";
+
+/** Icons a block item can show. A fixed list, so a design can never reference anything else. */
+export type PageIcon = "check" | "star" | "heart" | "bolt" | "shield" | "clock" | "users" | "calendar" | "gift" | "globe" | "mic" | "book" | "chart" | "rocket" | "mail" | "phone";
+
+export interface PageBlockVisibility {
+  desktop: boolean;
+  tablet: boolean;
+  mobile: boolean;
+}
+
+export interface PageColumn {
+  id: string;
+  blocks: PageBlock[];
+}
 
 export interface PageBlockStyle {
   /** "" = no background (page shows through), otherwise #rrggbb */
@@ -35,6 +61,11 @@ export interface PageBlockItem {
   id: string;
   title: string;
   text: string;
+  /** Gallery, logos and speaker pictures (https). */
+  imageUrl?: string;
+  /** Optional https link for the item (logos, social links, pricing buttons). */
+  link?: string;
+  icon?: PageIcon;
 }
 
 export interface PageBlock {
@@ -58,6 +89,12 @@ export interface PageBlock {
   showDate: boolean;
   /** Divider: height in px (8–160). */
   height: number;
+  /** Button and pricing buttons: https link. Empty = the registration form. */
+  link?: string;
+  /** Devices the block is shown on. Missing = every device. */
+  show?: PageBlockVisibility;
+  /** Columns block: 1–4 columns, each holding its own elements. */
+  columns?: PageColumn[];
 }
 
 export interface PageTheme {
@@ -71,7 +108,7 @@ export interface PageTheme {
   accentText: string;
   headingFont: "brand" | "sans" | "serif";
   /** Content width */
-  maxWidth: "md" | "lg" | "xl";
+  maxWidth: "md" | "lg" | "xl" | "full";
 }
 
 export interface PageDesign {

@@ -1,4 +1,5 @@
-import { cookies } from "next/headers";
+import { currencyForCountry } from "@/lib/currency/country";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 import { mockUser, workspace as mockWorkspace } from "@/data/mock/users";
@@ -72,7 +73,14 @@ export async function ensureDefaultOrganization(db: Db, user: SessionUser & { na
   const anyMembership = await db.membership.count({ where: { userId: user.id } });
   if (anyMembership > 0) return existing;
   const name = preferredName?.trim() || (user.name ? `${user.name.split(" ")[0]}'s Workspace` : "My Workspace");
-  await createOrganizationWithOwner(db, user, { name, planSelected: planPreselected });
+  let country: string | null = null;
+  try {
+    const h = await headers();
+    country = h.get("x-vercel-ip-country") ?? h.get("cf-ipcountry");
+  } catch {
+    // Not inside a request (a background job): fall back to the default currency.
+  }
+  await createOrganizationWithOwner(db, user, { name, planSelected: planPreselected, currency: country ? currencyForCountry(country) : undefined });
   return listUserOrganizations(db, user.id);
 }
 

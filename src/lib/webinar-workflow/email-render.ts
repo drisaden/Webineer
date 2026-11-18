@@ -29,8 +29,8 @@ export function renderEmailHtml(body: string, variables: EmailVariables): string
 
 export const SAMPLE_EMAIL_VARIABLES: EmailVariables = {
   first_name: "Jordan",
-  webinar_date: "Wed, Nov 18, 2026",
-  webinar_time: "6:00 PM",
+  webinar_date: "Wed, 18th Nov., 2026",
+  webinar_time: "6:00pm",
   webinar_timezone: "Africa/Lagos",
   join_link: "https://your-domain/room/your-webinar?r=…",
   replay_link: "https://your-domain/replay/your-webinar?r=…",

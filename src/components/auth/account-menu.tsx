@@ -103,7 +103,7 @@ export function AccountMenu() {
               </button>
             </form>
           ) : (
-            <p className="px-3 py-2 text-xs text-secondaryText">Sign-in is simulated in demo mode.</p>
+            <p className="px-3 py-2 text-xs text-secondaryText">You are in the demo workspace.</p>
           )}
         </div>
       )}

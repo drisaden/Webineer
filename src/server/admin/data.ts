@@ -1,3 +1,4 @@
+import { formatDay } from "@/lib/datetime";
 import { notFound } from "next/navigation";
 import * as mock from "@/data/mock/admin";
 import type { AdminPermission } from "@/lib/admin/permissions";
@@ -39,7 +40,7 @@ async function adminCan(permission: AdminPermission): Promise<boolean> {
   }
 }
 
-const day = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "—");
+const day = (d: Date | null | undefined) => (d ? formatDay(d, "Africa/Lagos") : "—");
 function ago(d: Date | null | undefined): string {
   if (!d) return "—";
   const m = Math.round((Date.now() - d.getTime()) / 60_000);

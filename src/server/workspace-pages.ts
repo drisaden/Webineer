@@ -1,3 +1,5 @@
+import { formatDay } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import { getCurrentUser } from "@/lib/auth/demo-session";
 import { getAuthMode } from "@/lib/supabase/config";
 import { getPrisma } from "@/server/db/prisma";
@@ -93,11 +95,11 @@ export async function getIntegrationStatuses<T extends { category: string; name:
   const flw = flutterwaveConfig();
   const smtp = smtpConfig();
   return [
-    { category: "Video", name: "YouTube / Vimeo / external video", status: "Connected", description: "Webinars embed externally hosted video; nothing is uploaded to Webineer." },
-    { category: "Email", name: "SMTP", status: smtp ? "Active" : "Not configured", description: smtp ? "Confirmations, reminders and receipts are delivered over SMTP, logged and retried." : "The site administrator hasn't configured outgoing email yet; emails are logged as skipped." },
-    { category: "Payments", name: "Flutterwave", status: !flw ? "Not configured" : flw.testMode ? "Test mode" : "Live", description: !flw ? "Paid webinars can't be published until the site administrator adds Flutterwave keys." : "Hosted checkout with server-side verification and signed webhooks." },
+    { category: "Video", name: "YouTube / Vimeo / external video", status: "Connected", description: "Add a YouTube, Vimeo or other video link to your webinar." },
+    { category: "Email", name: "Email delivery", status: smtp ? "Active" : "Unavailable", description: smtp ? "Confirmations, reminders and receipts are sent for you automatically." : "Email delivery is temporarily unavailable. Contact support if this continues." },
+    { category: "Payments", name: "Flutterwave", status: !flw ? "Unavailable" : flw.testMode ? "Test mode" : "Active", description: !flw ? "Online payments are temporarily unavailable. Contact support if this continues." : "Secure checkout for paid webinars and plan upgrades." },
     { category: "Calendar", name: "ICS calendar export", status: "Available", description: "Registrants can add their session to any calendar." },
-    { category: "Webhooks", name: "Outgoing dispatch", status: "Protected", description: "Signed payloads, retry handling, and private-IP protection." },
+    { category: "Webhooks", name: "Outgoing dispatch", status: "Protected", description: "Send each new registration to your own tools, such as Zapier or Make." },
   ];
 }
 
@@ -123,6 +125,6 @@ export async function getEmailActivity(): Promise<{ queued: number; delivered: n
     db.emailLog.count({ where: { organizationId: id, status: "SENT", sentAt: { gte: new Date(Date.now() - 30 * 86400e3) } } }),
     db.automationJob.findFirst({ where: { organizationId: id, type: "notification.send", status: "PENDING" }, orderBy: { runAt: "asc" }, select: { runAt: true } }),
   ]);
-  const nextSend = !next ? "—" : next.runAt.toDateString() === new Date().toDateString() ? "Today" : next.runAt.toISOString().slice(0, 10);
+  const nextSend = !next ? "—" : next.runAt.toDateString() === new Date().toDateString() ? "Today" : formatDay(next.runAt, DISPLAY_TZ);
   return { queued: queuedEmails + pendingJobs, delivered, nextSend };
 }

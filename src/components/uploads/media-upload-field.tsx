@@ -3,6 +3,7 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { CircleAlert, Film, ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { useViewer } from "@/components/auth/viewer-context";
+import { formatBytes, resizeImageFile } from "@/lib/images/resize";
 import { cn } from "@/lib/utils";
 
 type Kind = "image" | "video";
@@ -46,17 +47,25 @@ export function MediaUploadField({ label, value, onChange, kind = "image", optio
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   const rules = ACCEPT[kind];
   const busy = progress !== null;
 
   const upload = useCallback(
-    async (file: File) => {
+    async (original: File) => {
+      let file = original;
       setUploadError(null);
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      setSavedNote(null);
+      const ext = original.name.split(".").pop()?.toLowerCase() ?? "";
       if (!rules.extensions.includes(ext)) return setUploadError(`Use ${rules.label}.`);
-      if (file.size > rules.maxMb * 1024 * 1024) return setUploadError(`That file is larger than ${rules.maxMb} MB.`);
+      if (original.size > rules.maxMb * 1024 * 1024) return setUploadError(`That file is larger than ${rules.maxMb} MB.`);
       setProgress(0);
       try {
+        if (kind === "image") {
+          const shrunk = await resizeImageFile(file);
+          if (shrunk.resized) setSavedNote(`Optimised from ${formatBytes(shrunk.beforeBytes)} to ${formatBytes(shrunk.afterBytes)} before uploading.`);
+          file = shrunk.file;
+        }
         const signRes = await fetch("/api/uploads/sign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind }) });
         const signed = await signRes.json().catch(() => ({}));
         if (!signRes.ok) throw new Error(signed.error ?? "Couldn't start the upload.");
@@ -184,6 +193,7 @@ export function MediaUploadField({ label, value, onChange, kind = "image", optio
           </div>
         )}
 
+        {savedNote && <p className="mt-2 text-xs text-[#0F7B52]" data-testid="resize-note">{savedNote}</p>}
         <p className="mt-2 flex items-center gap-1.5 text-xs text-secondaryText">
           <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {uploadsEnabled ? `Paste a link, or drop a file here to upload (${rules.label}, up to ${rules.maxMb} MB).` : "Paste a link to a file hosted elsewhere. Uploads aren't set up on this site yet."}

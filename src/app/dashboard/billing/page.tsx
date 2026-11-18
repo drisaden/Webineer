@@ -1,3 +1,5 @@
+import { formatDay } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import { CheckCircle2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -14,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 const PAYMENT_NOTICES: Record<string, { tone: "success" | "info" | "danger"; text: string }> = {
   success: { tone: "success", text: "Payment confirmed. Your plan is active." },
-  pending: { tone: "info", text: "Your payment is still processing. Your plan will update as soon as Flutterwave confirms it." },
+  pending: { tone: "info", text: "Your payment is still processing. Your plan will update as soon as it is confirmed." },
   failed: { tone: "danger", text: "We couldn't confirm that payment. You haven't been charged for a plan change." },
 };
 
@@ -74,16 +76,16 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
               <p className="text-sm text-secondaryText">Current plan</p>
               <h2 className="text-2xl font-semibold">{current.name}</h2>
             </div>
-            {demo ? <Badge label="Local billing adapter" tone="info" /> : data.testMode ? <Badge label="Flutterwave test mode" tone="warning" /> : <Badge label="Flutterwave" tone="success" />}
+            {demo ? <Badge label="Demo billing" tone="info" /> : data.testMode ? <Badge label="Test payments" tone="warning" /> : <Badge label="Secure checkout" tone="success" />}
           </div>
           <p className="mt-3 text-sm text-secondaryText">
             {demo
-              ? "This workspace is using a simulated billing adapter. No real subscription payment is processed without a configured provider."
+              ? "This is a demo workspace, so no real payment is processed."
               : data.periodEnd
-                ? `Paid through ${new Date(data.periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Plans are prepaid in 30-day periods; buying the same plan again extends it.`
-                : "Plans are prepaid in 30-day periods and paid securely through Flutterwave."}
+                ? `Paid through ${formatDay(data.periodEnd, DISPLAY_TZ)}. Plans are prepaid in 30-day periods; buying the same plan again extends it.`
+                : "Plans are prepaid in 30-day periods and paid securely online."}
           </p>
-          {!demo && !data.paymentsReady && <p className="mt-2 text-sm text-[#B33A3A]">Online payments aren&apos;t configured on this site yet.</p>}
+          {!demo && !data.paymentsReady && <p className="mt-2 text-sm text-[#B33A3A]">Online payments are temporarily unavailable. Contact support if this continues.</p>}
         </Card>
 
         <section className="grid gap-4 xl:grid-cols-4">
@@ -141,7 +143,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
               {data.history.map((h) => (
                 <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span className="text-primaryText">{h.description}</span>
-                  <span className="text-secondaryText">{new Date(h.date).toLocaleDateString("en-GB")}</span>
+                  <span className="text-secondaryText">{formatDay(h.date, DISPLAY_TZ)}</span>
                   <span className="font-medium text-primaryText">{h.amount}</span>
                   <Badge label={h.status} tone={h.status === "successful" ? "success" : h.status === "pending" ? "info" : "warning"} />
                 </li>

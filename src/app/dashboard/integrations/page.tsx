@@ -8,11 +8,11 @@ import { getIntegrationStatuses } from "@/server/workspace-pages";
 export const dynamic = "force-dynamic";
 
 const demoConnectors = [
-  { category: "Video", name: "YouTube / Vimeo", status: "Connected", description: "External video-first webinar sources remain modular and provider-specific." },
-  { category: "Email", name: "Development email log", status: "Active", description: "All outgoing notifications are queued in a local log unless SMTP or a transactional provider is configured." },
-  { category: "Payments", name: "Paystack + Flutterwave", status: "Test mode", description: "Ready for secure verification and webhook processing with no live keys required." },
-  { category: "Calendar", name: "ICS calendar export", status: "Available", description: "Registration flows can generate reminders for attendee calendars." },
-  { category: "Webhooks", name: "Outgoing dispatch", status: "Protected", description: "Signed payloads, retry handling, and private-IP protection remain in place." },
+  { category: "Video", name: "YouTube / Vimeo", status: "Connected", description: "Add a YouTube, Vimeo or other video link to your webinar." },
+  { category: "Email", name: "Email delivery", status: "Active", description: "Confirmations, reminders and receipts are sent for you automatically." },
+  { category: "Payments", name: "Online payments", status: "Test mode", description: "Secure checkout for paid webinars and plan upgrades." },
+  { category: "Calendar", name: "ICS calendar export", status: "Available", description: "Registrants can add their session to any calendar." },
+  { category: "Webhooks", name: "Outgoing dispatch", status: "Protected", description: "Send each new registration to your own tools, such as Zapier or Make." },
 ];
 
 export default async function IntegrationsPage() {
@@ -21,7 +21,7 @@ export default async function IntegrationsPage() {
     <DashboardShell title="Integrations">
       <div className="space-y-6">
         <div className="flex justify-end">
-          <Link href="/dashboard/settings/payments" className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-[#EEF2F7]">
+          <Link href="/dashboard/payments" className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-[#EEF2F7]">
             Configure payments <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { startingEmailOf } from "@/lib/webinar-workflow/defaults";
 import { useState } from "react";
 import { BellRing, Eye, Mail, Plus, Send, Trash2, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,8 +77,7 @@ export function NotificationsSection({ draft, update, issues, showErrors, goTo }
   return (
     <div className="space-y-5">
       <Notice>
-        Emails are delivered through Webineer’s existing email provider. Without SMTP/provider credentials they are recorded in the development email log instead of being sent.
-        Reminders and follow-ups are sent by the scheduled notifications job (<code className="text-xs">/api/cron/notifications</code>).
+        Webineer sends these emails for you. Reminders and follow-ups go out automatically at the times you set below, and you can see every email sent in Emails.
       </Notice>
 
       <SectionCard title="Registration email" description="Sent immediately after a successful (and, for paid webinars, verified) registration." icon={<Mail className="h-4 w-4" />}>
@@ -109,6 +109,17 @@ export function NotificationsSection({ draft, update, issues, showErrors, goTo }
             {...common}
           />
         ))}
+      </SectionCard>
+
+      <SectionCard title="At start time" icon={<Send className="h-4 w-4" />}>
+        <EmailEditor
+          title="Starting now"
+          description="Sent at the exact start time of each session, in addition to the reminders. People who register after the start time don't get it."
+          value={startingEmailOf(n)}
+          onChange={(v) => set("startingEmail", { ...startingEmailOf(n), ...v })}
+          errorPrefix="startingEmail"
+          {...common}
+        />
       </SectionCard>
 
       <SectionCard title="Host notifications" icon={<UserCog className="h-4 w-4" />}>

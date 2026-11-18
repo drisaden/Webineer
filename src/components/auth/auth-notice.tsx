@@ -1,6 +1,6 @@
 const MESSAGES: Record<string, { tone: "info" | "error" | "success"; text: string }> = {
   link_invalid: { tone: "error", text: "That link is invalid or has expired. Request a new one." },
-  auth_unconfigured: { tone: "error", text: "Sign-in isn't configured on this server yet (Supabase Auth environment variables are missing)." },
+  auth_unconfigured: { tone: "error", text: "Sign-in is temporarily unavailable. Please try again in a few minutes." },
   signed_out: { tone: "success", text: "You've been signed out." },
 };
 

@@ -5,6 +5,7 @@ import { getAuthMode, safeNextPath } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureDefaultOrganization, syncUserProfile } from "@/server/auth/session";
 import { getPrisma } from "@/server/db/prisma";
+import { sendWelcomeEmail } from "@/server/email/welcome";
 
 const OTP_TYPES: EmailOtpType[] = ["signup", "email", "recovery", "invite", "magiclink", "email_change"];
 
@@ -36,6 +37,8 @@ export async function GET(request: Request) {
     const { profile, workspaceName, planPreselected } = await syncUserProfile(db, data.user);
     await ensureDefaultOrganization(db, { id: profile.id, email: profile.email, name: profile.name }, workspaceName, planPreselected);
     await db.auditLog.create({ data: { action: `auth.link_verified.${type}`, actorUserId: profile.id, actorEmail: profile.email } });
+    // Only the first account confirmation gets a welcome. It is deduplicated per user, and never blocks sign-in.
+    if (type === "signup") await sendWelcomeEmail({ userId: profile.id, email: profile.email, name: profile.name, workspaceName }).catch((e) => console.error("[email] welcome failed", e instanceof Error ? e.message : e));
   } catch (err) {
     console.error("[auth] profile sync after link verification failed", err);
     redirect("/account-unavailable");

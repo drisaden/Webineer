@@ -36,7 +36,7 @@ describe("landing page design", () => {
     assert.equal(pageDesignSchema.safeParse(withHero({ style: { ...hero.style, background: "red; background:url(x)" } })).success, false);
     assert.equal(pageDesignSchema.safeParse(withHero({ html: "<script>" })).success, false);
     assert.equal(pageDesignSchema.safeParse({ ...design, theme: { ...design.theme, accent: "url(x)" } }).success, false);
-    assert.equal(pageDesignSchema.safeParse({ ...design, blocks: Array.from({ length: 31 }, () => createBlock("text")).concat(createBlock("form")) }).success, false);
+    assert.equal(pageDesignSchema.safeParse({ ...design, blocks: Array.from({ length: 61 }, () => createBlock("text")).concat(createBlock("form")) }).success, false);
     const many = createBlock("faq");
     many.items = Array.from({ length: 13 }, (_, i) => ({ id: `i${i}`, title: "q", text: "a" }));
     assert.equal(pageDesignSchema.safeParse({ ...design, blocks: [many, createBlock("form")] }).success, false);

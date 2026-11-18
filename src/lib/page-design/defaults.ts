@@ -1,7 +1,12 @@
 import type { PageBlock, PageBlockStyle, PageBlockType, PageDesign, PageTheme } from "@/types";
 
-export const MAX_PAGE_BLOCKS = 30;
+export const MAX_PAGE_BLOCKS = 60;
+export const MAX_NESTED_BLOCKS = 6;
+/** Top-level blocks plus everything inside columns. */
+export const MAX_TOTAL_BLOCKS = 150;
 export const MAX_BLOCK_ITEMS = 12;
+/** Elements that need a paid plan. The standard blocks and a few basics are always available. */
+export const ADVANCED_BLOCK_TYPES: PageBlockType[] = ["iconbox", "pricing", "stats", "timeline", "gallery", "logos", "tabs", "social", "map", "columns"];
 
 let counter = 0;
 /** Short unique id for blocks and items (unique within a design is all that's needed). */
@@ -29,8 +34,13 @@ export interface BlockDefinition {
   /** Only one of these may exist on a page. */
   single?: boolean;
   /** Which content fields the editor shows for this block. */
-  fields: ("heading" | "text" | "image" | "imageSide" | "button" | "items" | "showDate" | "height")[];
+  fields: ("heading" | "text" | "image" | "imageSide" | "button" | "link" | "items" | "showDate" | "height" | "columns")[];
   itemLabels?: { title: string; text: string; noun: string };
+  /** Extra fields each item has, beyond its title and text. */
+  itemFields?: ("image" | "link" | "icon")[];
+  advanced?: boolean;
+  /** Shown to the owner in the palette, grouped by kind. */
+  group: "Basics" | "Content" | "Social proof" | "Layout";
   create: () => Omit<PageBlock, "id" | "type">;
 }
 
@@ -53,6 +63,7 @@ const item = (title: string, text: string) => ({ id: blockId("i"), title, text }
 export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   {
     type: "hero",
+    group: "Basics",
     label: "Hero",
     description: "Headline, intro, date and a register button",
     fields: ["heading", "text", "image", "button", "showDate"],
@@ -60,6 +71,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "text",
+    group: "Basics",
     label: "Text",
     description: "A heading with a paragraph",
     fields: ["heading", "text"],
@@ -67,6 +79,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "image",
+    group: "Basics",
     label: "Image",
     description: "A full-width picture",
     fields: ["image"],
@@ -74,6 +87,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "media",
+    group: "Content",
     label: "Image + text",
     description: "A picture beside a heading and paragraph",
     fields: ["heading", "text", "image", "imageSide", "button"],
@@ -81,6 +95,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "video",
+    group: "Content",
     label: "Video preview",
     description: "The preview set up in Registration",
     single: true,
@@ -89,6 +104,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "countdown",
+    group: "Content",
     label: "Countdown",
     description: "Time left until the session starts",
     single: true,
@@ -97,6 +113,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "presenters",
+    group: "Content",
     label: "Presenters",
     description: "Your host and presenters",
     single: true,
@@ -105,6 +122,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "benefits",
+    group: "Content",
     label: "Benefits",
     description: "A list of key points",
     fields: ["heading", "items"],
@@ -117,6 +135,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "testimonials",
+    group: "Social proof",
     label: "Testimonials",
     description: "Quotes from past attendees",
     fields: ["heading", "items"],
@@ -125,6 +144,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "faq",
+    group: "Content",
     label: "FAQ",
     description: "Questions and answers",
     fields: ["heading", "items"],
@@ -137,6 +157,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "cta",
+    group: "Basics",
     label: "Call to action",
     description: "A banner with a register button",
     fields: ["heading", "text", "button"],
@@ -144,6 +165,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "form",
+    group: "Basics",
     label: "Registration form",
     description: "The sign-up form (always on the page)",
     single: true,
@@ -152,10 +174,131 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
   {
     type: "divider",
+    group: "Layout",
     label: "Spacer",
     description: "Empty space between blocks",
     fields: ["height"],
     create: () => base(PLAIN, { height: 32 }),
+  },
+
+  {
+    type: "heading",
+    group: "Basics",
+    label: "Heading",
+    description: "A large headline with an optional subheading",
+    fields: ["heading", "text"],
+    create: () => base({ ...PLAIN, align: "center" }, { heading: "Your headline goes here", text: "" }),
+  },
+  {
+    type: "button",
+    group: "Basics",
+    label: "Button",
+    description: "A button that goes to the form or any link",
+    fields: ["button", "link"],
+    create: () => base({ ...PLAIN, align: "center" }, { buttonLabel: "Register now" }),
+  },
+  {
+    type: "iconbox",
+    group: "Content",
+    label: "Icon boxes",
+    description: "Cards with an icon, title and text",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemFields: ["icon"],
+    itemLabels: { title: "Title", text: "Text", noun: "box" },
+    create: () => base(PLAIN, { heading: "Why people come", items: [{ ...item("Learn fast", "Practical steps you can use today."), icon: "bolt" as const }, { ...item("Meet experts", "Ask your questions live."), icon: "users" as const }, { ...item("Get resources", "Take away templates and notes."), icon: "gift" as const }] }),
+  },
+  {
+    type: "pricing",
+    group: "Content",
+    label: "Pricing table",
+    description: "Compare ticket options side by side",
+    advanced: true,
+    fields: ["heading", "button", "items"],
+    itemFields: ["link"],
+    itemLabels: { title: "Name and price", text: "What's included (one per line)", noun: "option" },
+    create: () => base(PLAIN, { heading: "Choose your ticket", buttonLabel: "Get this ticket", items: [item("Standard · Free", "Live access\nChat and Q&A"), item("VIP · ₦10,000", "Live access\nReplay for 30 days\nSlides and notes")] }),
+  },
+  {
+    type: "stats",
+    group: "Social proof",
+    label: "Numbers",
+    description: "Big figures such as attendees or years of experience",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemLabels: { title: "Number", text: "Label", noun: "figure" },
+    create: () => base(CARD, { heading: "", items: [item("2,500+", "Attendees"), item("40", "Countries"), item("4.9/5", "Average rating")] }),
+  },
+  {
+    type: "timeline",
+    group: "Content",
+    label: "Agenda",
+    description: "A step-by-step schedule or timeline",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemLabels: { title: "Time or step", text: "What happens", noun: "step" },
+    create: () => base(CARD, { heading: "Agenda", items: [item("10 minutes", "Welcome and goals"), item("30 minutes", "The main session"), item("20 minutes", "Live Q&A")] }),
+  },
+  {
+    type: "gallery",
+    group: "Content",
+    label: "Photo gallery",
+    description: "A grid of pictures",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemFields: ["image"],
+    itemLabels: { title: "Caption", text: "Alt text", noun: "photo" },
+    create: () => base(PLAIN, { heading: "From past sessions", items: [] }),
+  },
+  {
+    type: "logos",
+    group: "Social proof",
+    label: "Logo strip",
+    description: "Brands, partners or places you've been featured",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemFields: ["image", "link"],
+    itemLabels: { title: "Name", text: "Alt text", noun: "logo" },
+    create: () => base(PLAIN, { heading: "As seen with", items: [] }),
+  },
+  {
+    type: "tabs",
+    group: "Content",
+    label: "Tabs",
+    description: "Content split into tabs",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemLabels: { title: "Tab name", text: "Tab content", noun: "tab" },
+    create: () => base(CARD, { heading: "", items: [item("Overview", "Say what the session covers."), item("Who it's for", "Describe the ideal attendee.")] }),
+  },
+  {
+    type: "social",
+    group: "Social proof",
+    label: "Social links",
+    description: "Links to your profiles",
+    advanced: true,
+    fields: ["heading", "items"],
+    itemFields: ["link"],
+    itemLabels: { title: "Name", text: "Handle", noun: "link" },
+    create: () => base({ ...PLAIN, align: "center" }, { heading: "Follow along", items: [item("Instagram", ""), item("LinkedIn", "")] }),
+  },
+  {
+    type: "map",
+    group: "Content",
+    label: "Location",
+    description: "An address with a link to the map",
+    advanced: true,
+    fields: ["heading", "text", "link"],
+    create: () => base(CARD, { heading: "Where to find us", text: "Street address, city" }),
+  },
+  {
+    type: "columns",
+    group: "Layout",
+    label: "Columns",
+    description: "Place other elements side by side",
+    advanced: true,
+    fields: ["columns"],
+    create: () => ({ ...base({ ...PLAIN, padding: "none" }), columns: [{ id: blockId("c"), blocks: [] }, { id: blockId("c"), blocks: [] }] }),
   },
 ];
 
@@ -170,6 +313,10 @@ export interface PageTemplate {
   id: string;
   name: string;
   description: string;
+  /** "form" pages are just the sign-up form; "long" pages tell the whole story; "standard" sit in between. */
+  kind?: "form" | "standard" | "long";
+  /** Industry or occasion, shown as a filter in the gallery. */
+  category?: string;
   build: () => Pick<PageDesign, "layout" | "theme" | "blocks">;
 }
 

@@ -1,3 +1,5 @@
+import { formatDayWithWeekday, formatTime } from "@/lib/datetime";
+import { startingEmailOf } from "@/lib/webinar-workflow/defaults";
 import { applyPlaceholders, renderEmailHtml, type EmailVariables } from "@/lib/webinar-workflow/email-render";
 import { primarySessionWindow } from "@/lib/webinar-workflow/sync";
 import { formatInZone } from "@/lib/webinar-workflow/time";
@@ -40,8 +42,8 @@ export function buildEmailVariables(webinar: Webinar, registration: Registration
   return {
     first_name: registration.name.split(/\s+/)[0] ?? registration.name,
     webinar_title: webinar.title,
-    webinar_date: formatInZone(start, tz, { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: undefined, minute: undefined, timeZoneName: undefined }),
-    webinar_time: formatInZone(start, tz, { weekday: undefined, month: undefined, day: undefined, year: undefined, hour: "numeric", minute: "2-digit", timeZoneName: undefined }),
+    webinar_date: formatDayWithWeekday(start, tz),
+    webinar_time: formatTime(start, tz),
     webinar_timezone: tz,
     join_link: links.joinLink,
     replay_link: links.replayLink,
@@ -161,6 +163,7 @@ export async function computeDueNotifications(webinar: Webinar, now = new Date()
       const type: EmailTemplateType = reminder.minutesBefore >= 1440 ? "reminder_24h" : reminder.minutesBefore >= 60 ? "reminder_1h" : "reminder_15m";
       consider(`${registration.id}:${sessionKey}:${reminder.id}`, new Date(start.getTime() - reminder.minutesBefore * 60_000), registration, reminder, type);
     }
+    consider(`${registration.id}:${sessionKey}:starting`, start, registration, startingEmailOf(config.notifications), "starting_now");
     consider(`${registration.id}:${sessionKey}:thank_you`, new Date(end.getTime() + config.notifications.thankYouEmail.minutesAfter * 60_000), registration, config.notifications.thankYouEmail, "thank_you");
     if (config.replay.enabled) {
       consider(`${registration.id}:${sessionKey}:replay`, end, registration, config.notifications.replayEmail, "replay_available");

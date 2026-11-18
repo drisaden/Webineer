@@ -1,3 +1,4 @@
+import type { DiscountCode, TicketTier } from "@/lib/pricing/ticket";
 import type { EvergreenScheduleType, VideoProviderValue } from "./index";
 import type { PageDesign } from "./page-design";
 
@@ -165,6 +166,8 @@ export interface NotificationsSettings {
     readiness: boolean;
     recipientEmail: string;
   };
+  /** Sent at the exact session start time. Separate from the reminders. Missing on older webinars, which get the default. */
+  startingEmail?: EmailMessageSettings;
   thankYouEmail: EmailMessageSettings & { minutesAfter: number };
   replayEmail: EmailMessageSettings;
   followUps: FollowUpSettings[];
@@ -182,6 +185,9 @@ export interface IntegrationsSettings {
     enabled: boolean;
     price: number;
     currency: "NGN" | "USD" | "EUR" | "GBP";
+    /** Ticket options. When there are any, visitors must pick one and its price is used. */
+    tiers?: TicketTier[];
+    discountCodes?: DiscountCode[];
   };
   analytics: {
     googleAnalyticsId: string;

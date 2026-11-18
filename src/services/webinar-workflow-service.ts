@@ -4,6 +4,7 @@ import type { OrgPermission } from "@/server/auth/permissions";
 import { audit } from "@/server/audit";
 import { getPrisma } from "@/server/db/prisma";
 import { ConcurrencyError, getStore } from "@/server/repositories";
+import { pageDesignPlanIssue } from "@/lib/page-design/plan";
 import { getEffectivePlan, paymentsConfigured, paymentsTestMode } from "@/server/payments/service";
 import { SAAS_PLANS } from "@/services/billing-entitlements";
 import { createDefaultWorkflowConfig, DATA_SECTION_KEYS, randomId, slugify } from "@/lib/webinar-workflow/defaults";
@@ -107,6 +108,12 @@ async function persist(webinar: Webinar, expectedVersion?: number): Promise<Webi
   }
 }
 
+export async function organizationCurrency(workspaceId: string): Promise<"NGN" | "USD" | "EUR" | "GBP"> {
+  if (getStore().kind === "mock") return "NGN";
+  const org = await getPrisma().organization.findUnique({ where: { id: workspaceId }, select: { currency: true } });
+  return org?.currency ?? "NGN";
+}
+
 export async function organizationTimezone(workspaceId: string): Promise<string> {
   if (getStore().kind === "mock") return workspace.timezone;
   const org = await getPrisma().organization.findUnique({ where: { id: workspaceId }, select: { timezone: true } });
@@ -160,7 +167,7 @@ export async function ensureWorkflow(user: User, webinar: Webinar): Promise<Webi
 
 export async function createDraft(user: User, initial?: Partial<WorkflowSectionData>): Promise<Webinar> {
   if (!canManageWebinar(user, { workspaceId: user.workspaceId }, "webinar.create")) throw new WorkflowError("You don't have permission to create webinars.", 403);
-  const config = createDefaultWorkflowConfig({ hostName: user.name, hostEmail: user.email, timezone: await organizationTimezone(user.workspaceId) });
+  const config = createDefaultWorkflowConfig({ hostName: user.name, hostEmail: user.email, timezone: await organizationTimezone(user.workspaceId), currency: await organizationCurrency(user.workspaceId) });
   if (initial) {
     for (const key of DATA_SECTION_KEYS) {
       if (initial[key]) (config as unknown as Record<string, unknown>)[key] = initial[key];
@@ -217,6 +224,14 @@ export async function updateSections(
     throw new WorkflowError("These sections were changed elsewhere since you loaded them. Reload to get the latest version.", 409, { conflicts });
   }
 
+  // The landing page designer is limited by plan. Enforced here so the API can't be used to get around it.
+  const incomingPage = sections.registration?.page;
+  if (incomingPage?.enabled && getStore().kind !== "mock") {
+    const { plan } = await getEffectivePlan(webinar.workspaceId);
+    const issue = pageDesignPlanIssue(incomingPage, SAAS_PLANS[plan].entitlements.pageBuilder);
+    if (issue) throw new WorkflowError(issue, 422);
+  }
+
   const nextVersion = current.version + 1;
   const next: WebinarWorkflowConfig = {
     ...current,
@@ -255,7 +270,7 @@ export async function publishWebinar(user: User, id: string): Promise<Webinar> {
     throw new WorkflowError("Resolve the highlighted issues before publishing.", 422, { issues: evaluation.blockingIssues });
   }
   // Selling tickets needs a configured gateway and a plan that includes paid webinars (database mode).
-  if (getStore().kind !== "mock" && config.integrations.payment.enabled && config.integrations.payment.price > 0) {
+  if (getStore().kind !== "mock" && config.integrations.payment.enabled && (config.integrations.payment.price > 0 || (config.integrations.payment.tiers ?? []).some((t) => t.price > 0))) {
     if (!paymentsConfigured()) {
       throw new WorkflowError("Online payments aren't set up on this site yet, so paid webinars can't be published.", 422, {
         issues: [{ section: "integrations", message: "Online payments aren't configured yet. Turn off paid registration or try again later.", field: "payment.enabled", severity: "error" }],
@@ -293,7 +308,6 @@ export async function publishWebinar(user: User, id: string): Promise<Webinar> {
 
 /** Soft-delete a webinar (keeps registrations and payments for records). */
 export async function deleteWebinar(user: User, id: string): Promise<void> {
-  if (user.role !== "owner") throw new WorkflowError("Only workspace owners can delete webinars.", 403);
   const webinar = await getOwnedWebinar(user, id, "webinar.delete");
   await getStore().softDeleteWebinar(webinar.id);
   await audit({ organizationId: webinar.workspaceId, actorUserId: user.id, actorEmail: user.email, action: "webinar.delete", targetType: "webinar", targetId: webinar.id, metadata: { title: webinar.title } });

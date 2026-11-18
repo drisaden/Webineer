@@ -49,18 +49,18 @@ export function RoomStage({
         </span>
       </div>
       <div className="overflow-hidden rounded-[1.5rem] border border-border bg-[#101B35]">
-        <div className="relative aspect-video w-full bg-[#111C2E]">
+        <div className={`relative w-full bg-[#111C2E] ${started ? "aspect-video" : "min-h-[16rem] sm:aspect-video"}`}>
           {started ? (
             <>
               {children}
               {overlay}
             </>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center text-white">
-              <p className="text-sm uppercase tracking-[0.15em] text-white/70">You&apos;re in. The session starts in</p>
+            <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 px-3 py-6 text-center text-white sm:gap-4 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.12em] text-white/70 sm:text-sm sm:tracking-[0.15em]">You&apos;re in. The session starts in</p>
               <Countdown startsAt={startsAt} accent="#16D6B2" liveLabel="Starting…" />
               <p className="text-sm text-white/70">{startLabel}</p>
-              <p className="max-w-sm text-xs text-white/50">Keep this page open. The video appears here automatically at the start time.</p>
+              <p className="max-w-xs text-xs text-white/50 sm:max-w-sm">Keep this page open. The video appears here automatically at the start time.</p>
             </div>
           )}
         </div>

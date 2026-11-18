@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/datetime";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getStore } from "@/server/repositories";
 import { getCurrentUser } from "@/lib/auth/demo-session";
@@ -23,7 +24,7 @@ export default async function AutomatedWebinarsPage() {
                 </div>
                 <p className="mt-2 text-sm text-secondaryText">{webinar.description}</p>
               </div>
-              <div className="text-sm text-secondaryText">{new Date(webinar.schedule.startsAt).toLocaleString()}</div>
+              <div className="text-sm text-secondaryText">{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</div>
             </div>
           </div>
         ))}

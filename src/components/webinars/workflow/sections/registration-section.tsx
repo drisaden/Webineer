@@ -399,7 +399,7 @@ function EmbedShare({ draft, update, issues, showErrors, context }: SectionProps
         />
         {errorFor(issues, "embed.allowedDomains", showErrors) && <Notice tone="error">{errorFor(issues, "embed.allowedDomains", true)}</Notice>}
         <p className="text-xs text-secondaryText">
-          Enforced using the embedding page’s origin as reported by the browser. Registrations are always validated server-side, and embed codes never contain credentials.
+          Only the websites you list here can show your registration form.
         </p>
       </SectionCard>
     </>
@@ -492,7 +492,7 @@ function RegistrationAnalytics({ context }: SectionProps) {
           </table>
         </div>
       )}
-      <p className="text-xs text-secondaryText">Figures refresh each time this draft is saved or reloaded. Analytics events are kept in memory in demo mode.</p>
+      <p className="text-xs text-secondaryText">Figures refresh each time you save or reload this page.</p>
     </SectionCard>
   );
 }

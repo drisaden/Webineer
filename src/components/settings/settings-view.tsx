@@ -19,7 +19,7 @@ const tabs = [
 ];
 
 const quickLinks = [
-  { href: "/dashboard/settings/payments", label: "Payments" },
+  { href: "/dashboard/payments", label: "Payments" },
   { href: "/dashboard/settings/domains", label: "Domains" },
 ];
 
@@ -116,7 +116,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
                 <SaveStatus state={profileSave.state} />
                 <Button type="submit" disabled={demo || profileSave.state.status === "saving"}>Save changes</Button>
               </div>
-              {demo && <p className="mt-3 text-xs text-secondaryText">Profile editing is disabled in demo mode.</p>}
+              {demo && <p className="mt-3 text-xs text-secondaryText">Profile editing is turned off in the demo workspace.</p>}
             </form>
           )}
 
@@ -148,7 +148,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
                     <Button type="submit" disabled={orgSave.state.status === "saving"}>Save workspace</Button>
                   </div>
                 ) : (
-                  <p className="mt-4 text-xs text-secondaryText">{demo ? "Workspace settings are read-only in demo mode." : "Only workspace owners and admins can change these settings."}</p>
+                  <p className="mt-4 text-xs text-secondaryText">{demo ? "Workspace settings are read-only in the demo workspace." : "Only workspace owners and admins can change these settings."}</p>
                 )}
               </form>
 
@@ -179,7 +179,7 @@ export function SettingsView({ data }: { data: SettingsData }) {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-secondaryText">Email invitations are enabled once outgoing email (SMTP) is configured.</p>
+                <p className="mt-2 text-xs text-secondaryText">Invited people receive an email with a link to join your workspace.</p>
               </div>
             </div>
           )}
@@ -228,10 +228,10 @@ export function SettingsView({ data }: { data: SettingsData }) {
               <h2 className="text-xl font-semibold">Security</h2>
               <div className="mt-6 space-y-4 text-sm text-secondaryText">
                 {demo ? (
-                  <p>Demo mode: sign-in is simulated for local development and is not production security.</p>
+                  <p>This is a demo workspace, so sign-in is not required.</p>
                 ) : (
                   <>
-                    <p>You sign in with your email and password through Supabase Auth. Sessions are stored in secure, HTTP-only cookies.</p>
+                    <p>You sign in with your email and password, and your session stays private to your browser.</p>
                     <p>
                       To change your password, <a href="/forgot-password" className="font-medium text-[#17294B] underline">request a reset link</a>.
                     </p>

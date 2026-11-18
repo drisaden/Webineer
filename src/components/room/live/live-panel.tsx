@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTime } from "@/lib/datetime";
 import { BarChart3, HelpCircle, MessageSquare, Pin, SendHorizonal, ShieldCheck, VolumeX, EyeOff, CheckCircle2, Lock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LIMITS, type LiveChatMessage } from "@/lib/live/types";
@@ -18,7 +19,7 @@ function colorFor(name: string) {
 }
 
 function clock(iso: string) {
-  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return formatTime(iso);
 }
 
 function Avatar({ name, host }: { name: string; host?: boolean }) {

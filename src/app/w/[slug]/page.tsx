@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/datetime";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -99,7 +100,7 @@ export default async function WebinarRegistrationPage({
             <div className="mt-6 rounded-2xl border border-border bg-[#F7F9FC] p-4 text-sm text-secondaryText">
               <div className="flex items-center justify-between">
                 <span>Starts</span>
-                <span className="font-medium text-primaryText">{new Date(webinar.schedule.startsAt).toLocaleString()}</span>
+                <span className="font-medium text-primaryText">{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</span>
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <span>Format</span>

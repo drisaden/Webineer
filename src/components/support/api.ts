@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDateTime, formatTime } from "@/lib/datetime";
+
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string; status: number };
 
 /** Small fetch wrapper: JSON in, JSON out, and a readable error instead of an exception. */
@@ -24,5 +26,5 @@ export async function api<T = Record<string, unknown>>(url: string, init?: { met
 export function formatWhen(iso: string, now = new Date()): string {
   const d = new Date(iso);
   const sameDay = d.toDateString() === now.toDateString();
-  return sameDay ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : d.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return sameDay ? formatTime(d) : formatDateTime(d);
 }

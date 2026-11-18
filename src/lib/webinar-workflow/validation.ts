@@ -8,6 +8,7 @@ import type {
   WorkflowSectionKey,
 } from "@/types";
 import { DATA_SECTION_KEYS } from "./defaults";
+import { validateTicketSettings } from "@/lib/pricing/ticket";
 import { pageDesignSchema } from "@/lib/page-design/schema";
 import { clipPreviewSupported, DEFAULT_VIDEO_PREVIEW } from "./preview";
 import { isValidLocalDate, isValidTimeZone, resolveSessions, zonedDateTimeToUtc } from "./time";
@@ -186,6 +187,7 @@ const checks: Record<WorkflowDataSectionKey, Check> = {
     const issues: WorkflowIssue[] = [];
     checkEmail("notifications", "Confirmation email", n.confirmation, issues, "confirmation");
     n.reminders.forEach((r, i) => checkEmail("notifications", `Reminder ${i + 1}`, r, issues, `reminders.${i}`));
+    if (n.startingEmail) checkEmail("notifications", "Starting-now email", n.startingEmail, issues, "startingEmail");
     checkEmail("notifications", "Thank-you email", n.thankYouEmail, issues, "thankYouEmail");
     checkEmail("notifications", "Replay email", n.replayEmail, issues, "replayEmail");
     n.followUps.forEach((f, i) => checkEmail("notifications", `Follow-up ${i + 1}`, f, issues, `followUps.${i}`));
@@ -202,7 +204,11 @@ const checks: Record<WorkflowDataSectionKey, Check> = {
     const i = config.integrations;
     const issues: WorkflowIssue[] = [];
     videoIssues("integrations", "Webinar video", i.video.provider, i.video.url, issues, "video.url", true);
-    if (i.payment.enabled && !(i.payment.price > 0)) issues.push(err("integrations", "Paid registration needs a price above zero.", "payment.price"));
+    const tiered = (i.payment.tiers?.length ?? 0) > 0;
+    if (i.payment.enabled && !tiered && !(i.payment.price > 0)) issues.push(err("integrations", "Paid registration needs a price above zero, or at least one ticket option.", "payment.price"));
+    if (i.payment.enabled) {
+      for (const message of validateTicketSettings(i.payment)) issues.push(err("integrations", message, "payment.tiers"));
+    }
     if (i.analytics.googleAnalyticsId && !GA_ID_RE.test(i.analytics.googleAnalyticsId)) {
       issues.push(err("integrations", "Google Analytics ID must look like G-XXXXXXX.", "analytics.googleAnalyticsId"));
     }

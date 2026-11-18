@@ -3,6 +3,7 @@
 import { BarChart3, CreditCard, Megaphone, PlayCircle, Webhook } from "lucide-react";
 import { getVideoProvider } from "@/providers/video";
 import { buildPlayerUrl, WORKFLOW_VIDEO_PROVIDERS } from "@/lib/webinar-workflow/video";
+import { TicketOptionsEditor } from "./ticket-options-editor";
 import { CopyField, errorFor, IssueSummary, Notice, NumberInput, SectionCard, SelectInput, TextInput, Toggle, UnavailableBadge } from "../form-controls";
 import type { SectionProps } from "../section-types";
 
@@ -54,20 +55,21 @@ export function IntegrationsSection({ draft, update, issues, showErrors, context
         )}
       </SectionCard>
 
-      <SectionCard title="Paid registration" description="Charge for seats using Webineer’s existing payment integration." icon={<CreditCard className="h-4 w-4" />}>
+      <SectionCard title="Paid registration" description="Charge for seats. Payments are collected securely, and you can withdraw your earnings from the Earnings page." icon={<CreditCard className="h-4 w-4" />}>
         <Notice tone={context.payment.live ? "success" : "warning"}>
           {context.payment.live
-            ? "Live payments are handled by Flutterwave (configured on the server). Each payment is verified server-side before access is granted."
+            ? "Payments are verified automatically before anyone gets access. Your earnings appear on the Earnings page."
             : context.payment.unavailable
-              ? "Online payments aren’t configured on this site yet, so a paid webinar can’t be published. Ask the site administrator to add the Flutterwave keys."
+              ? "Online payments are temporarily unavailable, so a paid webinar can’t be published right now. Contact support if this continues."
               : context.payment.provider === "flutterwave"
-                ? "Flutterwave is in test (sandbox) mode: checkout works end to end with test cards, but no real money is collected."
-                : "Demo mode: paid registrations use a simulated gateway and no real money is collected."}
+                ? "Payments are in test mode: checkout works with test cards, but no real money is collected."
+                : "Demo workspace: paid registrations are simulated and no real money is collected."}
         </Notice>
         <Toggle label="Require payment to register" checked={i.payment.enabled} onChange={(v) => set("payment", { ...i.payment, enabled: v })} />
         {i.payment.enabled && (
+          <>
           <div className="grid gap-5 md:grid-cols-2">
-            <NumberInput label="Price" value={i.payment.price} onChange={(v) => set("payment", { ...i.payment, price: Math.max(0, Math.round(v * 100) / 100) })} min={0} step={100} error={errorFor(issues, "payment.price", showErrors)} />
+            <NumberInput label={i.payment.tiers?.length ? "Price (not used while ticket options exist)" : "Price"} value={i.payment.price} onChange={(v) => set("payment", { ...i.payment, price: Math.max(0, Math.round(v * 100) / 100) })} min={0} step={100} error={errorFor(issues, "payment.price", showErrors)} />
             <SelectInput
               label="Currency"
               value={i.payment.currency}
@@ -80,6 +82,8 @@ export function IntegrationsSection({ draft, update, issues, showErrors, context
               ]}
             />
           </div>
+          <TicketOptionsEditor payment={i.payment} onChange={(p) => set("payment", p)} />
+          </>
         )}
       </SectionCard>
 
@@ -109,7 +113,7 @@ export function IntegrationsSection({ draft, update, issues, showErrors, context
         <div className="flex flex-wrap items-center gap-2 text-sm text-secondaryText">
           Mailchimp, HubSpot and other CRM connectors <UnavailableBadge />
         </div>
-        <p className="text-xs text-secondaryText">Until native connectors ship, use the webhook above with a tool such as Zapier or Make to sync registrants.</p>
+        <p className="text-xs text-secondaryText">Use the webhook above with a tool such as Zapier or Make to sync registrants to your other apps.</p>
       </SectionCard>
 
       <IssueSummary issues={issues} show={showErrors} />

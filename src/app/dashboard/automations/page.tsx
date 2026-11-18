@@ -1,3 +1,5 @@
+import { formatDay } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import { CheckCircle2, Clock3, PlayCircle, Workflow } from "lucide-react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -17,20 +19,19 @@ export default async function AutomationsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-secondaryText">Event-driven webinar orchestration</p>
+            <p className="text-sm text-secondaryText">What happens automatically around your webinars</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href="/dashboard/emails/automations">Reminder sequencing</Link>
+              <Link href="/dashboard/emails/automations">Reminder emails</Link>
             </Button>
-            <Button size="sm">New automation</Button>
           </div>
         </div>
 
         <section className="grid gap-4 md:grid-cols-3">
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Enabled</span><PlayCircle className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.enabled}</p></Card>
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Runs today</span><Workflow className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.runsToday}</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Pending queue</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.pending}</p>{data.failed > 0 && <p className="mt-1 text-xs text-[#8A5A0E]">{data.failed} failed</p>}</Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Scheduled</span><Clock3 className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.pending}</p>{data.failed > 0 && <p className="mt-1 text-xs text-[#8A5A0E]">{data.failed} failed</p>}</Card>
         </section>
 
         <Card>
@@ -59,7 +60,7 @@ export default async function AutomationsPage() {
 
                 <div className="mt-4 flex items-center justify-between text-sm text-secondaryText">
                   <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16A36A]" /> {workflow.executionCount} executions</span>
-                  <span>Updated {new Date(workflow.updatedAt).toLocaleDateString()}</span>
+                  <span>Updated {formatDay(workflow.updatedAt, DISPLAY_TZ)}</span>
                 </div>
               </div>
             ))}

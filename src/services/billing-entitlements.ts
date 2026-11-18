@@ -27,6 +27,7 @@ export interface PlanEntitlements {
   allowPaidWebinars: boolean;
   allowAdvancedAutomations: boolean;
   maxTeamMembers: number;
+  pageBuilder: { maxElements: number; advancedElements: boolean; allTemplates: boolean };
   transactionFeePercent: number; // For host ticket payments
 }
 
@@ -51,6 +52,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
       allowPaidWebinars: false,
       allowAdvancedAutomations: false,
       maxTeamMembers: 1,
+      pageBuilder: { maxElements: 12, advancedElements: false, allTemplates: false },
       transactionFeePercent: 10,
     },
   },
@@ -68,6 +70,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
       allowPaidWebinars: true,
       allowAdvancedAutomations: false,
       maxTeamMembers: 2,
+      pageBuilder: { maxElements: 30, advancedElements: true, allTemplates: true },
       transactionFeePercent: 5,
     },
   },
@@ -85,6 +88,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
       allowPaidWebinars: true,
       allowAdvancedAutomations: true,
       maxTeamMembers: 5,
+      pageBuilder: { maxElements: 60, advancedElements: true, allTemplates: true },
       transactionFeePercent: 2.5,
     },
   },
@@ -102,6 +106,7 @@ export const SAAS_PLANS: Record<"free" | "starter" | "professional" | "business"
       allowPaidWebinars: true,
       allowAdvancedAutomations: true,
       maxTeamMembers: 25,
+      pageBuilder: { maxElements: 150, advancedElements: true, allTemplates: true },
       transactionFeePercent: 1.5,
     },
   },

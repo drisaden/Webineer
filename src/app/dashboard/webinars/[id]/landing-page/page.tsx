@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PageBuilder } from "@/components/page-design/page-builder";
 import { getCurrentUser } from "@/lib/auth/demo-session";
+import { SAAS_PLANS } from "@/services/billing-entitlements";
+import { getStore } from "@/server/repositories";
+import { getEffectivePlan } from "@/server/payments/service";
 import { publicViewFor } from "@/services/registration-service";
 import { ensureWorkflow, getOwnedWebinar, WorkflowError } from "@/services/webinar-workflow-service";
 
@@ -23,6 +26,8 @@ export default async function WebinarLandingPage({ params }: { params: Promise<{
     throw error;
   }
   const config = webinar.workflow!;
+  // Demo mode has no billing, so it gets the top limits.
+  const limits = getStore().kind === "mock" ? SAAS_PLANS.business.entitlements.pageBuilder : SAAS_PLANS[(await getEffectivePlan(webinar.workspaceId)).plan].entitlements.pageBuilder;
 
   return (
     <PageBuilder
@@ -34,6 +39,7 @@ export default async function WebinarLandingPage({ params }: { params: Promise<{
       registration={config.registration}
       baseVersion={config.version}
       view={await publicViewFor(webinar)}
+      limits={limits}
     />
   );
 }

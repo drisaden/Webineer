@@ -1,3 +1,4 @@
+import { PricingError, resolveTicketPrice, type ResolvedPrice } from "@/lib/pricing/ticket";
 import { randomId } from "@/lib/webinar-workflow/defaults";
 import { buildPublicView, type PublicRegistrationView } from "@/lib/webinar-workflow/public-view";
 import type { PublicRegistrationInput } from "@/lib/webinar-workflow/schemas";
@@ -123,8 +124,19 @@ export async function registerAttendee(
   // One registration per email per webinar. We never return the existing
   // registration's access key here; the owner of the address gets a fresh
   // confirmation email instead.
-  const paid = config.integrations.payment.enabled && config.integrations.payment.price > 0;
   const dbPayments = store.kind !== "mock";
+  // The price comes from the host's saved settings and the visitor's choices, never from the browser.
+  const existingRegs = config.integrations.payment.enabled ? await store.listRegistrations(webinar.id) : [];
+  const usedBy = (code: string) => existingRegs.filter((r) => r.status !== "cancelled" && r.metadata?.discountCode === code && r.email.toLowerCase() !== input.email.toLowerCase()).length;
+  let price: ResolvedPrice;
+  try {
+    price = resolveTicketPrice(config.integrations.payment, { tierId: input.tierId, code: input.discountCode }, usedBy, now);
+  } catch (error) {
+    if (error instanceof PricingError) throw new RegistrationError(error.message, 422, { [error.field === "tier" ? "tierId" : "discountCode"]: error.message });
+    throw error;
+  }
+  const paid = price.amount > 0;
+  const priceMeta = { ticketTier: price.tier?.name, ticketTierId: price.tier?.id, discountCode: price.code ?? undefined, discountAmount: price.discount || undefined, listPrice: price.base };
   if (paid && dbPayments && !paymentsConfigured()) {
     throw new RegistrationError("Ticket sales for this webinar aren't available right now. Please try again later.", 503);
   }
@@ -139,7 +151,8 @@ export async function registerAttendee(
         throw new RegistrationError("This webinar is full.", 409);
       }
       const resumed = stale ? ((await store.updateRegistration(existing.id, { registeredAt: now.toISOString(), paymentStatus: "pending" })) ?? existing) : existing;
-      return beginTicketPayment(resumed, input.source);
+      // They may have picked another ticket or code this time, so the checkout uses what they chose now.
+      return beginTicketPayment({ ...resumed, metadata: { ...resumed.metadata, ...priceMeta } }, input.source);
     }
     if (existing && existing.paymentStatus !== "pending" && existing.paymentStatus !== "failed") {
       // Re-send the confirmation to the address owner, at most once an hour (no inbox flooding).
@@ -158,14 +171,14 @@ export async function registerAttendee(
         registrationId: registration.id,
         email: registration.email,
         name: registration.name,
-        amount: config.integrations.payment.price,
-        currency: config.integrations.payment.currency,
+        amount: price.amount,
+        currency: price.currency,
         origin: meta.origin,
       });
       await store.updateRegistration(registration.id, {
         paymentStatus: "pending",
         transactionId: checkout.txRef,
-        metadata: { ...registration.metadata, paymentProvider: "flutterwave", paymentAmount: config.integrations.payment.price, paymentCurrency: config.integrations.payment.currency },
+        metadata: { ...registration.metadata, paymentProvider: "flutterwave", paymentAmount: price.amount, paymentCurrency: price.currency },
       });
       await store.recordEvent({ workspaceId: webinar.workspaceId, webinarId: webinar.id, eventType: "payment_initiated", source, registrationId: registration.id });
       return { kind: "payment_required", registrationId: registration.id, paymentUrl: checkout.checkoutUrl, testMode: paymentsTestMode() };
@@ -193,6 +206,7 @@ export async function registerAttendee(
       answers,
       sessionStartsAt,
       embedOrigin: input.embedOrigin || undefined,
+      ...priceMeta,
     },
   };
   // Capacity and duplicate checks happen atomically inside the store.
@@ -203,6 +217,19 @@ export async function registerAttendee(
   }
   const registration = created.registration;
   const accessKey = accessKeyFor(registration);
+
+  // A limited code can be used up by someone registering at the same moment. Count again now that this
+  // registration exists, and give the seat back if the code has gone over its limit.
+  if (price.code) {
+    const limit = config.integrations.payment.discountCodes?.find((c) => c.code === price.code)?.maxUses;
+    if (limit != null) {
+      const now2 = (await store.listRegistrations(webinar.id)).filter((r) => r.status !== "cancelled" && r.metadata?.discountCode === price.code).sort((a, b) => a.registeredAt.localeCompare(b.registeredAt) || a.id.localeCompare(b.id));
+      if (now2.findIndex((r) => r.id === registration.id) >= limit) {
+        await store.updateRegistration(registration.id, { status: "cancelled" });
+        throw new RegistrationError("That code isn't valid.", 422, { discountCode: "That code isn't valid." });
+      }
+    }
+  }
 
   if (paid && dbPayments) {
     try {
@@ -221,8 +248,8 @@ export async function registerAttendee(
       transactionId: randomId("tx", 12),
       email: registration.email,
       name: registration.name,
-      amount: config.integrations.payment.price,
-      currency: config.integrations.payment.currency,
+      amount: price.amount,
+      currency: price.currency,
       webinarId: webinar.id,
       ticketTypeId: `workflow_${webinar.id}`,
       callbackUrl: `${meta.origin}/api/public/payments/verify/${registration.id}`,
@@ -233,7 +260,7 @@ export async function registerAttendee(
     }
     await store.updateRegistration(registration.id, {
       transactionId: init.reference,
-      metadata: { ...registration.metadata, paymentProvider: init.provider, paymentAmount: config.integrations.payment.price, paymentCurrency: config.integrations.payment.currency },
+      metadata: { ...registration.metadata, paymentProvider: init.provider, paymentAmount: price.amount, paymentCurrency: price.currency },
     });
     await store.recordEvent({ workspaceId: webinar.workspaceId, webinarId: webinar.id, eventType: "payment_initiated", source: input.source, registrationId: registration.id });
     return { kind: "payment_required", registrationId: registration.id, paymentUrl: init.authorizationUrl, testMode: init.provider === "simulated" };

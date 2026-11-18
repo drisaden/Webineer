@@ -7,7 +7,7 @@ import { SupportHub } from "@/components/support/support-hub";
 const guides = [
   { icon: Video, title: "Create a webinar", body: "Pick a mode, add your video link and schedule, then publish.", href: "/dashboard/webinars/new", cta: "Start a webinar" },
   { icon: LayoutTemplate, title: "Design the registration page", body: "Arrange blocks, upload images and match your brand.", href: "/dashboard/landing-pages", cta: "Open landing pages" },
-  { icon: CalendarClock, title: "Reminders and follow-ups", body: "See which emails are queued for each webinar.", href: "/dashboard/automations", cta: "View automations" },
+  { icon: CalendarClock, title: "Reminders and follow-ups", body: "See which emails are scheduled for each webinar.", href: "/dashboard/automations", cta: "View automations" },
 ];
 
 export default function HelpPage() {

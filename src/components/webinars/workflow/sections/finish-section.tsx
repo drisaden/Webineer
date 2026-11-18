@@ -57,7 +57,7 @@ export function FinishSection({ draft, goTo, context, evaluation, onSaveDraft, o
     ],
     integrations: [
       ["Video", d.integrations.video.url ? `${d.integrations.video.provider}: ${d.integrations.video.url}` : "—"],
-      ["Payment", d.integrations.payment.enabled ? `${d.integrations.payment.currency} ${d.integrations.payment.price.toLocaleString()} ${context.payment.live ? "" : "(test mode)"}` : "Free"],
+      ["Payment", d.integrations.payment.enabled ? `${d.integrations.payment.currency} ${(d.integrations.payment.tiers?.length ? `${d.integrations.payment.tiers.length} ticket options` : d.integrations.payment.price.toLocaleString())} ${context.payment.live ? "" : "(test mode)"}` : "Free"],
       ["Tracking", [d.integrations.analytics.googleAnalyticsId && "GA4", d.integrations.analytics.metaPixelId && "Meta Pixel"].filter(Boolean).join(", ") || "None"],
       ["Webhook", d.integrations.webhook.enabled ? d.integrations.webhook.url || "No URL" : "Off"],
     ],

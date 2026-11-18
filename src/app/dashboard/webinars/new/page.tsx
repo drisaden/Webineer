@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/demo-session";
 import { createDefaultWorkflowConfig, WORKFLOW_SECTIONS } from "@/lib/webinar-workflow/defaults";
 import { resolveAppOrigin } from "@/lib/webinar-workflow/embed";
 import { livePlanFor } from "@/server/live/plan";
-import { getPaymentAvailability, organizationTimezone } from "@/services/webinar-workflow-service";
+import { getPaymentAvailability, organizationTimezone, organizationCurrency } from "@/services/webinar-workflow-service";
 import type { WorkflowSectionKey } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function NewWebinarPage({ searchParams }: { searchParams: P
   const { section } = await searchParams;
   const initialSection = (WORKFLOW_SECTIONS.some((s) => s.key === section) ? section : "configuration") as WorkflowSectionKey;
   // Nothing is stored until the first save, so visiting this page never creates empty drafts.
-  const initialConfig = createDefaultWorkflowConfig({ hostName: user.name, hostEmail: user.email, timezone: await organizationTimezone(user.workspaceId) });
+  const initialConfig = createDefaultWorkflowConfig({ hostName: user.name, hostEmail: user.email, timezone: await organizationTimezone(user.workspaceId), currency: await organizationCurrency(user.workspaceId) });
 
   return (
     <DashboardShell title="Create Webinar">

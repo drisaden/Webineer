@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/lib/datetime";
+import { DISPLAY_TZ } from "@/lib/display-timezone";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BellRing, Mail, Send } from "lucide-react";
@@ -48,9 +50,9 @@ async function loadLogs(): Promise<{ demo: boolean; status: string; total: numbe
   ]);
   return {
     demo: false,
-    status: smtpConfig() ? "SMTP connected" : "SMTP not configured",
+    status: smtpConfig() ? "Active" : "Paused",
     total,
-    logs: rows.map((r) => ({ id: r.id, template: r.template, status: r.status.toLowerCase(), name: r.toName ?? "", email: r.toEmail, subject: r.subject, at: (r.sentAt ?? r.createdAt).toISOString(), error: r.lastError, attempts: r.attempts })),
+    logs: rows.map((r) => ({ id: r.id, template: r.template, status: r.status.toLowerCase(), name: r.toName ?? "", email: r.toEmail, subject: r.subject, at: (r.sentAt ?? r.createdAt).toISOString(), error: r.lastError ? "We could not deliver this email." : null, attempts: undefined })),
   };
 }
 
@@ -62,7 +64,7 @@ export default async function EmailsPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-secondaryText">Provider-aware communication layer</p>
+            <p className="text-sm text-secondaryText">Every email Webineer sends for your webinars</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="secondary" size="sm">
@@ -76,8 +78,8 @@ export default async function EmailsPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Templates</span><Mail className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{standardEmailTemplates.length}</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Logged sends</span><BellRing className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.total}</p></Card>
-          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Status</span><Send className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.status}</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Emails sent</span><BellRing className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.total}</p></Card>
+          <Card className="p-5"><div className="flex items-center justify-between"><span className="text-sm text-secondaryText">Email delivery</span><Send className="h-4 w-4 text-[#16D6B2]" /></div><p className="mt-3 text-3xl font-semibold">{data.status}</p></Card>
         </section>
 
         <Card>
@@ -91,11 +93,11 @@ export default async function EmailsPage() {
                     <Badge label={log.status} tone={log.status === "simulated" ? "info" : tone(log.status)} />
                   </div>
                   <p className="mt-1 text-sm text-secondaryText">{log.name} &lt;{log.email}&gt;</p>
-                  {log.error && log.status !== "sent" && <p className="mt-1 text-xs text-[#8A5A0E]">{log.error}{log.attempts ? ` · attempt ${log.attempts}` : ""}</p>}
+                  {log.error && log.status !== "sent" && <p className="mt-1 text-xs text-[#8A5A0E]">{log.error}</p>}
                 </div>
                 <div className="text-sm text-secondaryText">
                   <p>{log.subject}</p>
-                  <p>{new Date(log.at).toLocaleString()}</p>
+                  <p>{formatDateTime(log.at, DISPLAY_TZ)}</p>
                 </div>
               </div>
             ))}

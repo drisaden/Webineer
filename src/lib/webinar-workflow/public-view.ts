@@ -1,3 +1,4 @@
+import { lowestPrice, usesTiers } from "@/lib/pricing/ticket";
 import { publishablePageDesign } from "@/lib/page-design/schema";
 import type { CustomQuestion, PageDesign, Webinar } from "@/types";
 import { nextEvergreenSession, primarySessionWindow, registrationWindow } from "./sync";
@@ -35,7 +36,11 @@ export interface PublicRegistrationView {
   page: PageDesign | null;
   /** Limited preview for the registration page; never the full webinar video. */
   videoPreview: PreviewSource | null;
-  price: { amount: number; currency: string; testMode: boolean } | null;
+  price: { amount: number; currency: string; testMode: boolean; from?: boolean } | null;
+  /** Ticket options, when the host set any. Prices only; never codes. */
+  tickets: { id: string; name: string; price: number; description: string }[];
+  /** True when the host has any discount codes, so the form shows a code field. */
+  hasDiscountCodes: boolean;
   closedReason: string | null;
   tracking: { googleAnalyticsId: string | null; metaPixelId: string | null };
   thankYou: {
@@ -90,7 +95,9 @@ export function buildPublicView(
   const r = config.registration;
   const c = config.configuration;
   const t = config.thankYou;
-  const paid = config.integrations.payment.enabled && config.integrations.payment.price > 0;
+  const pay = config.integrations.payment;
+  const tickets = usesTiers(pay) ? pay.tiers!.map((t) => ({ id: t.id, name: t.name, price: t.price, description: t.description })) : [];
+  const paid = pay.enabled && (tickets.length ? tickets.some((t) => t.price > 0) : pay.price > 0);
 
   return {
     publicId: config.publicId,
@@ -116,7 +123,9 @@ export function buildPublicView(
     customQuestions: r.customQuestions.filter((q) => q.label.trim()),
     page: publishablePageDesign(r.page),
     videoPreview: resolveVideoPreview(config),
-    price: paid ? { amount: config.integrations.payment.price, currency: config.integrations.payment.currency, testMode: options.paymentTestMode } : null,
+    price: paid ? { amount: lowestPrice(pay), currency: pay.currency, testMode: options.paymentTestMode, ...(tickets.length ? { from: true } : {}) } : null,
+    tickets,
+    hasDiscountCodes: pay.enabled && (pay.discountCodes ?? []).some((c) => c.active),
     closedReason,
     tracking: {
       googleAnalyticsId: GA_ID_RE.test(config.integrations.analytics.googleAnalyticsId) ? config.integrations.analytics.googleAnalyticsId : null,

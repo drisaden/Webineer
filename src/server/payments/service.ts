@@ -244,6 +244,11 @@ export async function confirmPayment(lookup: { txRef: string; transactionId?: st
       if (payment.purpose === "WEBINAR_TICKET" && payment.registrationId) {
         await tx.registration.updateMany({ where: { id: payment.registrationId }, data: { paymentStatus: "PAID" } });
       }
+      if (payment.purpose === "WEBINAR_TICKET") {
+        const fee = Number((verified.raw as { app_fee?: unknown }).app_fee);
+        const { recordSale } = await import("@/server/earnings/service");
+        await recordSale(tx, payment, Number.isFinite(fee) ? fee : null);
+      }
       if (payment.purpose === "PLATFORM_SUBSCRIPTION") await activateSubscription(tx, payment.id);
       return true;
     });
