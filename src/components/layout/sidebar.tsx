@@ -36,12 +36,12 @@ export function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
   return (
-    <aside className={mobile ? "flex h-full w-full flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:hidden" : "sticky top-0 hidden h-screen w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:flex"}>
+    <aside className={mobile ? "flex h-full w-full flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:hidden" : "hidden h-dvh w-72 shrink-0 flex-col border-r border-white/10 bg-[linear-gradient(180deg,rgba(4,27,94,0.96),rgba(7,31,98,0.9))] p-5 text-white shadow-[10px_0_30px_rgba(4,27,94,0.12)] lg:flex"}>
       <div className="mb-8 flex items-center gap-3 px-2">
         <Logo tone="onDark" className="h-9 w-auto" title={APP_NAME} />
       </div>
 
-      <div className="space-y-6 overflow-y-auto pr-1">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
         <div>
           <p className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">Overview</p>
           <nav className="space-y-1.5">
