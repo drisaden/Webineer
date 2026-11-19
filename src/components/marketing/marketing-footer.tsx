@@ -22,8 +22,9 @@ export function MarketingFooter() {
           <h3 className="font-semibold">Company</h3>
           <ul className="mt-3 space-y-2 text-sm text-secondaryText">
             <li><Link href="/help" className="tap hover:text-primaryText">Help center</Link></li>
-            <li>Privacy</li>
-            <li>Terms</li>
+            <li><Link href="/privacy" className="tap hover:text-primaryText">Privacy</Link></li>
+            <li><Link href="/terms" className="tap hover:text-primaryText">Terms</Link></li>
+            <li><Link href="/dmca" className="tap hover:text-primaryText">Copyright / DMCA</Link></li>
           </ul>
         </div>
       </div>

@@ -7,7 +7,7 @@ function logoUrl(): string {
 }
 
 /** Branded, table-based wrapper that renders consistently in common email clients. */
-export function renderLayout(opts: { contentHtml: string; preheader?: string; footer?: string }): string {
+export function renderLayout(opts: { contentHtml: string; preheader?: string; footer?: string; footerHtml?: string }): string {
   const footer = opts.footer ?? "You’re receiving this email because of activity on Webineer.";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Webineer</title></head>
@@ -18,7 +18,7 @@ ${opts.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacit
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border:1px solid #E4E9F1;border-radius:14px;">
 <tr><td style="background:#101B35;border-radius:14px 14px 0 0;padding:18px 28px;color:#ffffff;font-size:18px;font-weight:bold;letter-spacing:0.5px;"><img src="${logoUrl()}" alt="Webineer" width="140" height="28" style="display:block;border:0;outline:none;height:28px;width:auto;color:#ffffff;font-size:18px;font-weight:bold;"></td></tr>
 <tr><td style="padding:28px;font-size:15px;line-height:1.6;color:#17294B;">${opts.contentHtml}</td></tr>
-<tr><td style="padding:16px 28px 24px;border-top:1px solid #E4E9F1;font-size:12px;line-height:1.5;color:#64748B;">${escapeHtml(footer)}</td></tr>
+<tr><td style="padding:16px 28px 24px;border-top:1px solid #E4E9F1;font-size:12px;line-height:1.5;color:#64748B;">${escapeHtml(footer)}${opts.footerHtml ? `<br><br>${opts.footerHtml}` : ""}</td></tr>
 </table>
 </td></tr></table>
 </body></html>`;

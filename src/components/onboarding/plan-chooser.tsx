@@ -115,6 +115,11 @@ export function PlanChooser({ plans, paymentsReady, testMode }: { plans: PlanCho
                 >
                   {busy === plan.key ? (free ? "Setting up…" : "Opening checkout…") : free ? "Continue with Free" : `Choose ${plan.name}`}
                 </Button>
+                {!free && (
+                  <p className="mt-2 text-center text-xs text-secondaryText" data-testid="renewal-terms">
+                    One payment of ${plan.priceMonthly} for 30 days. <strong className="font-semibold text-primaryText">Does not renew automatically.</strong>
+                  </p>
+                )}
               </div>
             );
           })}

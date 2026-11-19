@@ -142,9 +142,11 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
       workspaceName: z.string().trim().min(2, "Enter a workspace name.").max(80),
       password,
       confirmPassword: z.string(),
+      // Age gate: accounts are for adults only. Enforced here, not just by the checkbox.
+      ageConfirmed: z.literal("yes", { message: "You must be at least 18 years old to create an account." }),
     })
     .refine((v) => v.password === v.confirmPassword, { path: ["confirmPassword"], message: "Passwords don't match." })
-    .safeParse(Object.fromEntries(["firstName", "lastName", "email", "workspaceName", "password", "confirmPassword"].map((k) => [k, formData.get(k) ?? ""])));
+    .safeParse(Object.fromEntries(["firstName", "lastName", "email", "workspaceName", "password", "confirmPassword", "ageConfirmed"].map((k) => [k, formData.get(k) ?? ""])));
   const values = Object.fromEntries(["firstName", "lastName", "email", "workspaceName"].map((k) => [k, String(formData.get(k) ?? "").slice(0, 200)]));
   // A plan picked on the pricing section before signing up (optional).
   const planChoice = formData.get("plan");
@@ -166,7 +168,7 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
       // With a paid plan already chosen, land on Billing to complete it; otherwise the dashboard.
       emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(selectedPlan && selectedPlan !== "free" ? `/dashboard/billing?plan=${selectedPlan}` : "/dashboard")}`,
       // Display data only. Authorization never reads user_metadata.
-      data: { full_name: `${firstName} ${lastName}`.trim(), workspace_name: workspaceName, ...(selectedPlan ? { selected_plan: selectedPlan } : {}) },
+      data: { full_name: `${firstName} ${lastName}`.trim(), workspace_name: workspaceName, age_confirmed_at: new Date().toISOString(), ...(selectedPlan ? { selected_plan: selectedPlan } : {}) },
     },
   });
   if (error) {

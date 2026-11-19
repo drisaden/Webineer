@@ -65,7 +65,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             </span>
             {data.canManageBilling && data.paymentsReady && (
               <div className="w-full md:w-56">
-                <UpgradeButton plan={wanted} label={`Pay for ${SAAS_PLANS[wanted].name}`} />
+                <UpgradeButton plan={wanted} label={`Pay for ${SAAS_PLANS[wanted].name}`} price={`$${SAAS_PLANS[wanted].priceMonthly}`} />
               </div>
             )}
           </div>
@@ -118,7 +118,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                   </ul>
                 </div>
                 {!demo && plan.priceMonthly > 0 && data.canManageBilling && data.paymentsReady && (
-                  <UpgradeButton plan={key} label={key === currentKey ? "Extend 30 days" : `Switch to ${plan.name}`} />
+                  <UpgradeButton plan={key} label={key === currentKey ? "Extend 30 days" : `Switch to ${plan.name}`} price={`$${plan.priceMonthly}`} />
                 )}
               </CardContent>
             </Card>

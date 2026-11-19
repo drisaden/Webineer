@@ -126,6 +126,6 @@ export function renderWelcome(opts: { name?: string | null; workspaceName?: stri
 }
 
 /** Wrap a workflow/system body fragment (already escaped HTML) in the branded layout. */
-export function wrapFragment(fragmentHtml: string, preheader?: string): string {
-  return renderLayout({ contentHtml: fragmentHtml, preheader });
+export function wrapFragment(fragmentHtml: string, preheader?: string, footerHtml?: string): string {
+  return renderLayout({ contentHtml: fragmentHtml, preheader, footerHtml });
 }

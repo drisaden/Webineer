@@ -34,3 +34,5 @@ if (process.env.VERCEL_ENV === "production" && hasDb) {
   console.log(`[vercel-build] Skipping migrations (${hasDb ? "not a production deploy" : "no DIRECT_URL/DATABASE_URL"}).`);
 }
 run("npx next build");
+// Fail the deploy if a secret ended up in the JavaScript visitors download (see the script for what it checks).
+run("node scripts/check-client-bundle.mjs");

@@ -9,6 +9,7 @@
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check:bundle": "node scripts/check-client-bundle.mjs",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",

@@ -18,6 +18,8 @@ export interface SendEmailOptions {
   registrationId?: string;
   /** Same key = same logical email; a second send with the key is dropped (no duplicates). */
   dedupeKey?: string;
+  /** Marketing-style message: the footer carries the sender's postal address and an unsubscribe link. */
+  commercial?: { unsubscribeUrl: string | null };
 }
 
 export interface EmailProvider {
@@ -88,13 +90,25 @@ export class DatabaseSmtpEmailProvider implements EmailProvider {
     const standard = renderStandardTemplate(options.templateType, options.variables, options.subjectOverride);
     const subject = applyPlaceholders(options.subjectOverride || standard.subject, options.variables);
     const fragment = options.bodyHtml ?? (options.bodyText ? escapeHtml(options.bodyText).replace(/\n/g, "<br />") : standard.html);
-    const text = options.bodyText ?? standard.text;
+    let text = options.bodyText ?? standard.text;
+    let footerHtml: string | undefined;
+    if (options.commercial) {
+      const { companyInfo } = await import("@/lib/compliance");
+      const company = companyInfo();
+      const unsub = options.commercial.unsubscribeUrl;
+      const sender = [company.name, company.postalAddress].filter(Boolean).join(", ");
+      footerHtml = [
+        sender ? escapeHtml(`Sent by ${sender}.`) : "",
+        unsub ? `Don’t want these emails? <a href="${escapeHtml(unsub)}" style="color:#17294B;">Unsubscribe</a>.` : "",
+      ].filter(Boolean).join("<br>");
+      text = [text, "", "--", sender ? `Sent by ${sender}.` : null, unsub ? `Unsubscribe: ${unsub}` : null].filter((line) => line !== null).join("\n");
+    }
     const queued = await queueAndDeliver({
       template: options.templateType,
       to: options.recipientEmail,
       toName: options.recipientName,
       subject,
-      html: wrapFragment(fragment, text.split("\n")[0]?.slice(0, 120)),
+      html: wrapFragment(fragment, text.split("\n")[0]?.slice(0, 120), footerHtml),
       text,
       organizationId: options.workspaceId,
       webinarId: options.webinarId,

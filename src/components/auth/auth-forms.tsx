@@ -115,6 +115,16 @@ export function RegisterForm({ plan }: { plan?: string }) {
         <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" placeholder="Repeat your password" state={state} />
         <FieldError state={state} name="confirmPassword" />
       </div>
+      <div>
+        <label htmlFor="ageConfirmed" className="flex items-start gap-3 text-sm">
+          <input id="ageConfirmed" name="ageConfirmed" type="checkbox" value="yes" required className="mt-0.5 h-5 w-5 shrink-0 rounded border-border accent-[#041B5E]" {...invalid(state, "ageConfirmed")} />
+          <span>I confirm that I am at least 18 years old.</span>
+        </label>
+        <FieldError state={state} name="ageConfirmed" />
+        <p className="mt-2 text-xs text-secondaryText">
+          By creating an account you agree to our <Link href="/terms" className="font-medium text-[#17294B] underline">Terms</Link> and <Link href="/privacy" className="font-medium text-[#17294B] underline">Privacy Policy</Link>.
+        </p>
+      </div>
       <Button type="submit" className="w-full" disabled={pending}>{pending ? "Creating account..." : "Create account"}</Button>
     </form>
   );

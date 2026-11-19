@@ -4,6 +4,7 @@ import { applyPlaceholders, renderEmailHtml, type EmailVariables } from "@/lib/w
 import { primarySessionWindow } from "@/lib/webinar-workflow/sync";
 import { formatInZone } from "@/lib/webinar-workflow/time";
 import { getEmailProvider } from "@/providers/email";
+import { isCommercialTemplate, unsubscribeUrl } from "@/lib/compliance";
 import { dispatchWebhook } from "@/providers/webhooks/dispatcher";
 import { accessKeyFor } from "@/server/access-keys";
 import { getStore } from "@/server/repositories";
@@ -60,8 +61,12 @@ export async function sendWorkflowEmail(
   dedupeKey?: string,
 ) {
   if (!message.enabled) return null;
+  const commercial = isCommercialTemplate(templateType);
+  // Someone who unsubscribed stops getting reminders and follow-ups (their confirmation/receipts still go out).
+  if (commercial && registration.metadata?.unsubscribedAt) return null;
   const variables = buildEmailVariables(webinar, registration, origin);
   return getEmailProvider().sendEmail({
+    commercial: commercial ? { unsubscribeUrl: unsubscribeUrl(origin, registration.id) } : undefined,
     workspaceId: webinar.workspaceId,
     webinarId: webinar.id,
     registrationId: registration.id,
@@ -184,9 +189,9 @@ export async function runScheduledNotifications(origin: string, now = new Date()
     const keys = new Set(webinar.workflow?.sentNotificationKeys ?? []);
     for (const item of due) {
       // The key also dedupes in email_logs, so overlapping cron runs can't send twice.
-      await sendWorkflowEmail(webinar, item.registration, item.message, item.templateType, origin, `notify:${item.key}`);
+      const record = await sendWorkflowEmail(webinar, item.registration, item.message, item.templateType, origin, `notify:${item.key}`);
       keys.add(item.key);
-      sentCount += 1;
+      if (record) sentCount += 1; // null = unsubscribed, nothing was sent
     }
     // Re-read so concurrent edits made while emails were sending are kept.
     // (Phase 6 moves this bookkeeping to the automation_jobs / email_logs tables.)
