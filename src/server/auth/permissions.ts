@@ -44,7 +44,8 @@ const ALL: OrgPermission[] = [
 
 export const ORG_ROLE_PERMISSIONS: Record<OrgRole, readonly OrgPermission[]> = {
   OWNER: ALL,
-  ADMIN: ALL.filter((p) => p !== "org.billing.manage"),
+  // Billing and deleting webinars stay with the workspace owner.
+  ADMIN: ALL.filter((p) => p !== "org.billing.manage" && p !== "webinar.delete"),
   EDITOR: ["org.view", "org.members.view", "webinar.view", "webinar.create", "webinar.edit", "webinar.publish", "registration.view", "registration.manage", "analytics.view", "email.manage"],
   HOST: ["org.view", "webinar.view", "webinar.edit", "registration.view", "analytics.view"],
   ANALYST: ["org.view", "webinar.view", "registration.view", "registration.export", "analytics.view", "payment.view"],

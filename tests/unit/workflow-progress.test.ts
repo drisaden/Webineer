@@ -20,13 +20,21 @@ describe("workflow progress ticks", () => {
     assert.equal(s.notifications, "completed");
     for (const key of ["thankYou", "live", "replay"]) assert.equal(s[key], "incomplete");
     // Reviewed in the current editing session (not yet saved) also counts.
-    assert.equal(states(evaluateWorkflow(fresh(), { reviewedSections: ["live"] })).live, "completed");
+    assert.equal(states(evaluateWorkflow(fresh(), { reviewedSections: ["thankYou"] })).thankYou, "completed");
   });
 
-  test("a reviewed section with unsaved edits is not ticked until saved", () => {
+  test("the tick follows the draft as it's edited, without waiting for a save", () => {
     const config = fresh();
     config.reviewedSections = ["live"];
-    assert.equal(states(evaluateWorkflow(config, { dirtySections: ["live"] })).live, "incomplete");
+    assert.equal(states(evaluateWorkflow(config, { dirtySections: ["live"] })).live, "attention");
+    config.integrations.video.url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    assert.equal(states(evaluateWorkflow(config, { dirtySections: ["live", "integrations"] })).live, "completed");
+  });
+
+  test("a reviewed section with an unresolved warning shows attention, not completed", () => {
+    const config = fresh();
+    config.reviewedSections = ["live"]; // the room has no video yet
+    assert.equal(states(evaluateWorkflow(config)).live, "attention");
   });
 
   test("reviewing does not hide errors: an invalid reviewed section is not completed", () => {

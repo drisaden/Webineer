@@ -283,7 +283,6 @@ export function evaluateWorkflow(
   options: { published?: boolean; dirtySections?: WorkflowSectionKey[]; reviewedSections?: WorkflowSectionKey[]; now?: Date } = {},
 ): WorkflowEvaluation {
   const ctx: Ctx = { now: options.now ?? new Date() };
-  const dirty = new Set(options.dirtySections ?? []);
   const reviewed = new Set<WorkflowSectionKey>([...(config.reviewedSections ?? []), ...(options.reviewedSections ?? [])]);
   const sections = {} as Record<WorkflowSectionKey, SectionEvaluation>;
   const blockingIssues: WorkflowIssue[] = [];
@@ -291,13 +290,18 @@ export function evaluateWorkflow(
   for (const key of DATA_SECTION_KEYS) {
     const { issues, complete } = checks[key](config, ctx);
     const hasErrors = issues.some((i) => i.severity === "error");
+    // Publishing already confirmed any warnings shown on the review step.
+    const hasWarnings = !options.published && issues.some((i) => i.severity === "warning");
     const touched = sectionHasUserInput(config, key);
     let state: SectionEvaluation["state"];
     // Valid defaults alone don't earn a tick: the owner must have worked through the section
     // (or published the webinar, which confirms every setting shown on the review step).
     const workedThrough = Boolean(options.published) || reviewed.has(key) || (!DEFAULT_VALID_SECTIONS.has(key) && touched);
-    if (complete && !dirty.has(key) && workedThrough) state = "completed";
+    // The tick follows the current draft as it's edited (no waiting for a save), and a section with
+    // anything still unresolved, warnings included, never shows as complete.
+    if (complete && !hasWarnings && workedThrough) state = "completed";
     else if (hasErrors && (touched || REQUIRED[key])) state = touched ? "attention" : "incomplete";
+    else if (hasWarnings && workedThrough) state = "attention";
     else state = "incomplete";
     sections[key] = { state, issues, required: REQUIRED[key] };
     blockingIssues.push(...issues.filter((i) => i.severity === "error"));

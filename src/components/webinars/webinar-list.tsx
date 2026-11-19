@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock, MoreVertical, Search, SlidersHorizontal, Plus, Trash2, Settings2, Eye, ExternalLink } from "lucide-react";
 import type { Webinar } from "@/types";
+import { formatDateTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -24,10 +25,12 @@ export function WebinarList({ webinars, canDelete }: WebinarListProps) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpenMenu(null);
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) setFiltersOpen(false);
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -49,6 +52,9 @@ export function WebinarList({ webinars, canDelete }: WebinarListProps) {
     const matchesSearch = !term || webinar.title.toLowerCase().includes(term) || webinar.description.toLowerCase().includes(term);
     return matchesSearch && (status === "all" || webinar.status === status) && (type === "all" || webinar.type === type);
   });
+
+  const activeFilters = (status !== "all" ? 1 : 0) + (type !== "all" ? 1 : 0);
+  const hasCriteria = activeFilters > 0 || query.trim() !== "";
 
   const removeWebinar = async () => {
     if (!deleteTarget) return;
@@ -80,12 +86,14 @@ export function WebinarList({ webinars, canDelete }: WebinarListProps) {
             <Search className="h-4 w-4 text-secondaryText" />
             <input aria-label="Search webinars" placeholder="Search webinars..." value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 w-full bg-transparent text-sm outline-none md:min-h-0" />
           </label>
-          <div className="relative flex items-center gap-3">
-            <button type="button" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen} className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-medium text-primaryText">
+          <div className="flex items-center gap-3">
+            <div className="relative" ref={filterRef}>
+            <button type="button" onClick={() => setFiltersOpen((value) => !value)} aria-expanded={filtersOpen} className="tap inline-flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-medium text-primaryText">
               <SlidersHorizontal className="h-4 w-4" /> Filters
+              {activeFilters > 0 && <span data-testid="filter-count" className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#041B5E] px-1 text-[11px] font-semibold text-white">{activeFilters}</span>}
             </button>
             {filtersOpen && (
-              <div className="absolute right-40 top-full z-30 mt-2 w-72 rounded-2xl border border-border bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
+              <div className="absolute left-0 top-full z-30 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
                   <label className="text-xs font-medium text-secondaryText">
                     Status
@@ -110,18 +118,30 @@ export function WebinarList({ webinars, canDelete }: WebinarListProps) {
                     </select>
                   </label>
                 </div>
-                <button type="button" onClick={clearFilters} className="mt-3 text-xs font-semibold text-[#17294B] hover:underline">Clear all filters</button>
+                <button type="button" onClick={clearFilters} className="mt-3 text-xs font-semibold text-[#17294B] hover:underline">Clear search and filters</button>
               </div>
             )}
+            </div>
             <Button asChild className="gap-2">
               <Link href="/dashboard/webinars/new"><Plus className="h-4 w-4" /> Create Webinar</Link>
             </Button>
           </div>
         </div>
 
+        {hasCriteria && (
+          <p className="text-xs text-secondaryText" role="status" aria-live="polite" data-testid="result-count">
+            Showing {filtered.length} of {webinars.length} webinar{webinars.length === 1 ? "" : "s"}.{" "}
+            <button type="button" onClick={clearFilters} className="font-semibold text-[#17294B] hover:underline">Clear search and filters</button>
+          </p>
+        )}
+
         {filtered.length === 0 ? (
           <div className="rounded-[1.5rem] border border-dashed border-border bg-white p-10 text-center text-sm text-secondaryText">
-            No webinars match the current search and filters.
+            {webinars.length === 0 ? (
+              <>You haven&apos;t created a webinar yet. <Link href="/dashboard/webinars/new" className="font-semibold text-[#17294B] hover:underline">Create your first webinar</Link>.</>
+            ) : (
+              "No webinars match the current search and filters."
+            )}
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -160,8 +180,13 @@ export function WebinarList({ webinars, canDelete }: WebinarListProps) {
                 </div>
                 <div className="p-4">
                   <p className="text-sm text-secondaryText line-clamp-2">{webinar.description}</p>
-                  <div className="mt-4 flex items-center gap-2 text-sm text-secondaryText"><CalendarClock className="h-4 w-4" />{new Date(webinar.schedule.startsAt).toLocaleString()}</div>
-                  <div className="mt-5 flex items-center justify-between"><span className="text-sm text-secondaryText">{webinar.registrationCount} registrations</span></div>
+                  <div className="mt-4 flex items-center gap-2 text-sm text-secondaryText"><CalendarClock className="h-4 w-4" />{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</div>
+                  <div className="mt-5 flex items-center justify-between">
+                    <span className="text-sm text-secondaryText">{webinar.registrationCount} registrations</span>
+                    <Link href={webinar.status === "draft" ? `/dashboard/webinars/${webinar.id}/setup` : `/dashboard/webinars/${webinar.id}`} className="tap text-sm font-medium text-[#17294B] hover:underline">
+                      {webinar.status === "draft" ? "Continue setup" : "Manage"}
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

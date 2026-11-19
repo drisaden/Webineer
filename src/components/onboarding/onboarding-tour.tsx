@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, BarChart3, Bell, CreditCard, FileText, HelpCircle, PartyPopper, Rocket, Users, Video, Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,15 @@ interface Rect {
 
 const PAD = 6;
 
+// Phones and narrow windows get a bottom sheet instead of a floating card.
+const NARROW_QUERY = "(max-width: 639px)";
+const subscribeNarrow = (notify: () => void) => {
+  const query = window.matchMedia(NARROW_QUERY);
+  query.addEventListener("change", notify);
+  return () => query.removeEventListener("change", notify);
+};
+const readNarrow = () => window.matchMedia(NARROW_QUERY).matches;
+
 function visibleRect(target: string | undefined): Rect | null {
   if (!target) return null;
   for (const el of Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`))) {
@@ -56,6 +65,7 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const narrow = useSyncExternalStore(subscribeNarrow, readNarrow, () => false);
   const step = STEPS[index];
   const last = index === STEPS.length - 1;
 
@@ -102,11 +112,16 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
   if (!open) return null;
 
   // Card position: beside the spotlight when there is one and room for it, otherwise centred.
+  // On a phone it's a bottom sheet that never covers the highlighted item's tap target unexpectedly.
   const cardWidth = 340;
-  const beside = rect && typeof window !== "undefined" && rect.left + rect.width + 16 + cardWidth < window.innerWidth;
-  const cardStyle: React.CSSProperties = beside
-    ? { top: Math.max(16, Math.min(rect!.top, window.innerHeight - 300)), left: rect!.left + rect!.width + 16, width: cardWidth }
-    : { top: "50%", left: "50%", width: `min(${cardWidth + 40}px, calc(100vw - 2rem))`, transform: "translate(-50%, -50%)" };
+  const beside = !narrow && rect && typeof window !== "undefined" && rect.left + rect.width + 16 + cardWidth < window.innerWidth;
+  const cardStyle: React.CSSProperties = narrow
+    ? {}
+    : beside
+      ? { top: Math.max(16, Math.min(rect!.top, window.innerHeight - 300)), left: rect!.left + rect!.width + 16, width: cardWidth }
+      : { top: "50%", left: "50%", width: `min(${cardWidth + 40}px, calc(100vw - 2rem))`, transform: "translate(-50%, -50%)" };
+  // The sidebar is hidden on phones, so nav steps point at the menu button instead of a highlight.
+  const menuHint = narrow && step.target && !rect;
   const Icon = step.icon;
 
   return (
@@ -133,7 +148,7 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
         aria-modal="true"
         aria-labelledby="tour-title"
         key={index}
-        className="tour-card absolute rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-[0_24px_60px_rgba(4,27,94,0.35)] outline-none"
+        className={`tour-card absolute border border-white/70 bg-white shadow-[0_24px_60px_rgba(4,27,94,0.35)] outline-none ${narrow ? "inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.25rem] p-4" : "rounded-[1.5rem] p-5"}`}
         style={cardStyle}
       >
         <button type="button" onClick={() => finish(false)} aria-label="Skip tour" className="tap-icon absolute right-1.5 top-1.5 rounded-full p-1.5 text-secondaryText hover:bg-[#EEF5FF] md:right-3 md:top-3">
@@ -147,27 +162,30 @@ export function OnboardingTour({ persist }: { persist: boolean }) {
         </p>
         <h2 id="tour-title" className="mt-1 text-lg text-primaryText">{step.title}</h2>
         <p className="mt-2 text-sm text-secondaryText">{step.body}</p>
+        {menuHint && (
+          <p className="mt-2 rounded-xl bg-[#EEF5FF] px-3 py-2 text-xs text-[#041B5E]">On a phone, tap the menu button (☰) at the top left to find this.</p>
+        )}
 
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#EEF2F7]" aria-hidden>
           <div className="h-full rounded-full bg-[#16D6B2] transition-[width] duration-500 ease-out" style={{ width: `${((index + 1) / STEPS.length) * 100}%` }} />
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
           <button type="button" onClick={() => finish(false)} className="tap -ml-2 px-2 text-sm font-medium text-secondaryText hover:text-primaryText">
             {last ? "Close" : "Skip tour"}
           </button>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${narrow && last ? "w-full flex-col-reverse items-stretch" : ""}`}>
             {index > 0 && (
-              <Button type="button" variant="secondary" size="sm" className="border-border" onClick={() => setIndex(index - 1)}>
+              <Button type="button" variant="secondary" size="sm" className="min-h-11 border-border" onClick={() => setIndex(index - 1)}>
                 <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> Back
               </Button>
             )}
             {last ? (
-              <Button type="button" size="sm" onClick={() => finish(true)}>
+              <Button type="button" size="sm" className="min-h-11" onClick={() => finish(true)}>
                 Create a webinar <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
               </Button>
             ) : (
-              <Button type="button" size="sm" onClick={() => setIndex(index + 1)}>
+              <Button type="button" size="sm" className="min-h-11" onClick={() => setIndex(index + 1)}>
                 Next <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
               </Button>
             )}
