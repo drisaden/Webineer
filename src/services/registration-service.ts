@@ -5,9 +5,11 @@ import type { PublicRegistrationInput } from "@/lib/webinar-workflow/schemas";
 import { nextEvergreenSession, registrationWindow } from "@/lib/webinar-workflow/sync";
 import { resolveSessions } from "@/lib/webinar-workflow/time";
 import { getActivePaymentProvider } from "@/providers/payment";
+import { z } from "zod";
 import { accessKeyFor, accessKeyMatches, assertLinkSecret } from "@/server/access-keys";
 import { getStore } from "@/server/repositories";
-import { confirmPayment, findTicketPayment, PaymentError, paymentsConfigured, paymentsTestMode, startTicketCheckout } from "@/server/payments/service";
+import { confirmPayment, findTicketPayment, PaymentError, paymentsConfigured, paymentsTestMode, startReplayCheckout, startTicketCheckout } from "@/server/payments/service";
+import { replayEntitled } from "@/services/attendee-access";
 import { onRegistrationConfirmed, sendWorkflowEmail } from "@/services/workflow-notifications";
 import type { Registration, Webinar } from "@/types";
 
@@ -68,6 +70,22 @@ function resolveSessionStart(webinar: Webinar, sessionId: string, now: Date): st
   }
   if (config.configuration.mode === "always_on") return (nextEvergreenSession(config, now) ?? now).toISOString();
   return config.publishedAt;
+}
+
+/** What a visitor would pay for their ticket choice and code. Used by the form's "Apply" button. */
+export async function quoteTicket(publicId: string, tierId: string, code: string) {
+  const webinar = await getPublishedWebinarByPublicId(publicId);
+  if (!webinar || !webinar.workflow) throw new RegistrationError("This webinar is not accepting registrations.", 404);
+  const pay = webinar.workflow.integrations.payment;
+  const regs = pay.enabled ? await getStore().listRegistrations(webinar.id) : [];
+  const usedBy = (c: string) => regs.filter((r) => r.status !== "cancelled" && r.metadata?.discountCode === c).length;
+  try {
+    const price = resolveTicketPrice(pay, { tierId, code }, usedBy);
+    return { amount: price.amount, base: price.base, discount: price.discount, currency: price.currency, code: price.code };
+  } catch (error) {
+    if (error instanceof PricingError) throw new RegistrationError(error.message, 422, { [error.field === "tier" ? "tierId" : "discountCode"]: error.message });
+    throw error;
+  }
 }
 
 /**
@@ -321,6 +339,8 @@ export async function verifyRegistrationPayment(
 export async function fulfilTicket(webinar: Webinar, registrationId: string, origin: string): Promise<Registration> {
   const store = getStore();
   const registration = (await store.getRegistration(registrationId))!;
+  // A replay purchase completes through the same payment path but must not send a ticket confirmation.
+  if (registration.paymentStatus !== "paid") return registration;
   await store.recordEvent({ workspaceId: webinar.workspaceId, webinarId: webinar.id, eventType: "payment_completed", source: registration.source, registrationId: registration.id });
   await store.recordEvent({ workspaceId: webinar.workspaceId, webinarId: webinar.id, eventType: "registration_completed", source: registration.source, registrationId: registration.id });
   await onRegistrationConfirmed(webinar, registration, origin);
@@ -341,4 +361,72 @@ export async function publicViewFor(webinar: Webinar): Promise<PublicRegistratio
     activeRegistrations: await activeRegistrationCount(webinar.id),
     paymentTestMode: getStore().kind === "mock" ? true : paymentsTestMode(),
   });
+}
+
+
+const replayBuyerSchema = z.object({ name: z.string().trim().min(2, "Enter your name").max(120), email: z.string().trim().toLowerCase().email("Enter a valid email address").max(200) });
+
+export type ReplayPurchaseOutcome =
+  | { kind: "payment_required"; paymentUrl: string; testMode: boolean }
+  | { kind: "already_access"; registrationId: string; accessKey: string };
+
+/**
+ * Start buying a replay. A registrant identifies with their personal link (r and k). Anyone else gives a
+ * name and email, which creates a registration for the webinar (replay-only; no live ticket is implied).
+ */
+export async function startReplayPurchase(input: { slug: string; r?: string; k?: string; name?: string; email?: string }, origin: string): Promise<ReplayPurchaseOutcome> {
+  const store = getStore();
+  if (store.kind === "mock") throw new RegistrationError("Selling replays needs the live database and payments, so it isn't available in demo mode.", 503);
+  assertLinkSecret();
+  const webinar = await store.getWebinarBySlug(input.slug);
+  if (!webinar?.workflow || webinar.status === "draft") throw new RegistrationError("This replay isn't available.", 404);
+  const config = webinar.workflow;
+  const sales = config.replay.enabled ? config.replay.sales : undefined;
+  if (!sales?.enabled || !(sales.price > 0)) throw new RegistrationError("This replay isn't for sale.", 404);
+  if (!paymentsConfigured()) throw new RegistrationError("Online payments aren't available right now. Please try again later.", 503);
+
+  let registration = await verifyAccess(webinar, input.r, input.k);
+  if (!registration) {
+    const parsed = replayBuyerSchema.safeParse({ name: input.name, email: input.email });
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) fieldErrors[String(issue.path[0] ?? "form")] ||= issue.message;
+      throw new RegistrationError("Enter your name and email to continue.", 422, fieldErrors);
+    }
+    if (await store.findRegistrationByEmail(webinar.id, parsed.data.email)) {
+      throw new RegistrationError("This email is already registered. Open your personal link from your email to buy the replay.", 409);
+    }
+    const created = await store.createRegistration({
+      webinarId: webinar.id,
+      name: parsed.data.name,
+      email: parsed.data.email,
+      registeredAt: new Date().toISOString(),
+      source: "direct",
+      status: "registered",
+      paymentStatus: config.integrations.payment.enabled ? "pending" : "free",
+      metadata: { replayOnly: true },
+    }, {});
+    if (created.status !== "created") throw new RegistrationError("This email is already registered. Open your personal link from your email to buy the replay.", 409);
+    registration = created.registration;
+  }
+
+  if (replayEntitled(config, registration)) return { kind: "already_access", registrationId: registration.id, accessKey: accessKeyFor(registration) };
+
+  try {
+    const checkout = await startReplayCheckout({
+      organizationId: webinar.workspaceId,
+      webinarId: webinar.id,
+      webinarTitle: webinar.title,
+      registrationId: registration.id,
+      email: registration.email,
+      name: registration.name,
+      amount: sales.price,
+      currency: sales.currency,
+      origin,
+    });
+    return { kind: "payment_required", paymentUrl: checkout.checkoutUrl, testMode: paymentsTestMode() };
+  } catch (error) {
+    if (error instanceof PaymentError) throw new RegistrationError(error.message, error.status);
+    throw error;
+  }
 }

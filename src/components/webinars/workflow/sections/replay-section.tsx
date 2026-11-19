@@ -123,6 +123,34 @@ export function ReplaySection({ draft, update, issues, showErrors, goTo, context
             {r.expiration === "days_after" && <NumberInput label="Expire after" value={r.expiresAfterDays} onChange={(v) => set("expiresAfterDays", Math.min(365, Math.max(1, Math.round(v))))} min={1} max={365} suffix="days" />}
           </SectionCard>
 
+          <SectionCard title="Sell the replay" description="Charge for the recording. Payments go to your earnings with the same platform fee as tickets." icon={<RotateCcw className="h-4 w-4" />}>
+            <Toggle
+              label="Charge for the replay"
+              checked={Boolean(r.sales?.enabled)}
+              onChange={(v) => set("sales", { price: r.sales?.price ?? 0, currency: r.sales?.currency ?? draft.integrations.payment.currency, freeForTicketHolders: r.sales?.freeForTicketHolders ?? true, enabled: v })}
+            />
+            {r.sales?.enabled && (
+              <>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <NumberInput label="Replay price" value={r.sales.price} min={0} step={100} onChange={(v) => set("sales", { ...r.sales!, price: Math.max(0, Math.round(v * 100) / 100) })} error={errorFor(issues, "sales.price", showErrors)} />
+                  <SelectInput
+                    label="Currency"
+                    value={r.sales.currency}
+                    onChange={(v) => set("sales", { ...r.sales!, currency: v })}
+                    options={[
+                      { value: "NGN", label: "NGN — Nigerian naira" },
+                      { value: "USD", label: "USD — US dollar" },
+                      { value: "GBP", label: "GBP — British pound" },
+                      { value: "EUR", label: "EUR — Euro" },
+                    ]}
+                  />
+                </div>
+                <Toggle label="Free for people who paid for the live ticket" description="Only applies when this webinar charges for registration." checked={r.sales.freeForTicketHolders} onChange={(v) => set("sales", { ...r.sales!, freeForTicketHolders: v })} />
+                {!context.payment.live && <Notice tone="warning">Replay sales need online payments. They only work on the live site with payments set up.</Notice>}
+              </>
+            )}
+          </SectionCard>
+
           <Notice>
             Replay notification email:{" "}
             <strong>{draft.notifications.replayEmail.enabled ? "on" : "off"}</strong>.{" "}

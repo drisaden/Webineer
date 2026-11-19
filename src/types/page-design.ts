@@ -87,6 +87,8 @@ export interface PageBlock {
   items: PageBlockItem[];
   /** Hero: show the session date. */
   showDate: boolean;
+  /** Location element: show an embedded map for the address. */
+  embed?: boolean;
   /** Divider: height in px (8–160). */
   height: number;
   /** Button and pricing buttons: https link. Empty = the registration form. */

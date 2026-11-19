@@ -270,7 +270,7 @@ export async function publishWebinar(user: User, id: string): Promise<Webinar> {
     throw new WorkflowError("Resolve the highlighted issues before publishing.", 422, { issues: evaluation.blockingIssues });
   }
   // Selling tickets needs a configured gateway and a plan that includes paid webinars (database mode).
-  if (getStore().kind !== "mock" && config.integrations.payment.enabled && (config.integrations.payment.price > 0 || (config.integrations.payment.tiers ?? []).some((t) => t.price > 0))) {
+  if (getStore().kind !== "mock" && ((config.integrations.payment.enabled && (config.integrations.payment.price > 0 || (config.integrations.payment.tiers ?? []).some((t) => t.price > 0))) || (config.replay.enabled && config.replay.sales?.enabled && config.replay.sales.price > 0))) {
     if (!paymentsConfigured()) {
       throw new WorkflowError("Online payments aren't set up on this site yet, so paid webinars can't be published.", 422, {
         issues: [{ section: "integrations", message: "Online payments aren't configured yet. Turn off paid registration or try again later.", field: "payment.enabled", severity: "error" }],

@@ -40,6 +40,7 @@ const baseShape = {
     buttonLabel: text(60),
     items: z.array(itemSchema).max(MAX_BLOCK_ITEMS),
     showDate: z.boolean(),
+    embed: z.boolean().optional(),
     height: z.number().int().min(8).max(160),
     link: httpsOrEmpty.optional(),
     show: z.object({ desktop: z.boolean(), tablet: z.boolean(), mobile: z.boolean() }).strict().optional(),

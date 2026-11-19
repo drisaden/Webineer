@@ -168,6 +168,34 @@ export async function startTicketCheckout(input: {
   });
 }
 
+/** Checkout for buying a webinar's replay. It is recorded as a ticket-type sale (same earnings and fee), marked kind "replay". */
+export async function startReplayCheckout(input: {
+  organizationId: string;
+  webinarId: string;
+  webinarTitle: string;
+  registrationId: string;
+  email: string;
+  name: string;
+  amount: number;
+  currency: "NGN" | "USD" | "EUR" | "GBP";
+  origin: string;
+}) {
+  const windowKey = Math.floor(Date.now() / CHECKOUT_REUSE_MS);
+  return startCheckout({
+    organizationId: input.organizationId,
+    purpose: "WEBINAR_TICKET",
+    amount: input.amount,
+    currency: input.currency,
+    idempotencyKey: `replay:${input.registrationId}:${windowKey}`,
+    customer: { email: input.email, name: input.name },
+    title: `${input.webinarTitle} (replay)`,
+    redirectUrl: () => `${input.origin}/api/public/replay/verify/${input.registrationId}`,
+    webinarId: input.webinarId,
+    registrationId: input.registrationId,
+    metadata: { kind: "replay", webinarTitle: input.webinarTitle },
+  });
+}
+
 export async function startSubscriptionCheckout(input: { organizationId: string; plan: PlanKey; email: string; name: string; origin: string }) {
   const plan = SAAS_PLANS[input.plan];
   if (!plan || plan.priceMonthly <= 0) throw new PaymentError("Choose a paid plan.");
@@ -241,7 +269,13 @@ export async function confirmPayment(lookup: { txRef: string; transactionId?: st
         data: { status: "SUCCESSFUL", providerTransactionId: verified.id || null, verification: verified.raw as Prisma.InputJsonValue, verifiedAt: new Date(), failureReason: null },
       });
       if (won.count !== 1) return false;
-      if (payment.purpose === "WEBINAR_TICKET" && payment.registrationId) {
+      const isReplay = (payment.metadata as { kind?: string } | null)?.kind === "replay";
+      if (payment.purpose === "WEBINAR_TICKET" && payment.registrationId && isReplay) {
+        // A replay purchase unlocks the replay only. It never marks the live ticket as paid.
+        const reg = await tx.registration.findUnique({ where: { id: payment.registrationId }, select: { metadata: true } });
+        const meta = (reg?.metadata ?? {}) as Record<string, unknown>;
+        await tx.registration.update({ where: { id: payment.registrationId }, data: { metadata: { ...meta, replayPaid: true, replayPaidAt: new Date().toISOString() } as Prisma.InputJsonValue } });
+      } else if (payment.purpose === "WEBINAR_TICKET" && payment.registrationId) {
         await tx.registration.updateMany({ where: { id: payment.registrationId }, data: { paymentStatus: "PAID" } });
       }
       if (payment.purpose === "WEBINAR_TICKET") {
@@ -335,10 +369,19 @@ export async function getEffectivePlan(organizationId: string): Promise<{ plan: 
 export async function findTicketPayment(registrationId: string, txRefHint?: string | null) {
   const db = getPrisma();
   if (txRefHint) {
-    const hinted = await db.payment.findFirst({ where: { txRef: txRefHint, registrationId, purpose: "WEBINAR_TICKET" } });
+    const hinted = await db.payment.findFirst({ where: { txRef: txRefHint, registrationId, purpose: "WEBINAR_TICKET", metadata: { path: ["kind"], equals: "ticket" } } });
     if (hinted) return hinted;
   }
-  return db.payment.findFirst({ where: { registrationId, purpose: "WEBINAR_TICKET" }, orderBy: { createdAt: "desc" } });
+  return db.payment.findFirst({ where: { registrationId, purpose: "WEBINAR_TICKET", metadata: { path: ["kind"], equals: "ticket" } }, orderBy: { createdAt: "desc" } });
+}
+
+/** The replay purchase payment for a registration (never the live ticket). */
+export async function findReplayPayment(registrationId: string, txRefHint?: string | null) {
+  const db = getPrisma();
+  return db.payment.findFirst({
+    where: { registrationId, purpose: "WEBINAR_TICKET", metadata: { path: ["kind"], equals: "replay" }, ...(txRefHint ? { txRef: txRefHint } : {}) },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export { logEvent as logPaymentEvent };

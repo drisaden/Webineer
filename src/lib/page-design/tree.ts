@@ -97,3 +97,43 @@ export function resizeColumns(block: PageBlock, count: number, newId: (prefix?: 
   kept[count - 1] = { ...kept[count - 1], blocks: [...kept[count - 1].blocks, ...spill] };
   return { ...block, columns: kept };
 }
+
+/**
+ * Moves a nested element to a position in any column (the same one or another). `index` is where it should end up
+ * in the target column. A full target column refuses a move from a different column.
+ */
+export function moveToColumn(blocks: PageBlock[], id: string, targetColumnId: string, index: number, maxPerColumn: number): PageBlock[] {
+  const moving = findBlock(blocks, id);
+  const source = findParent(blocks, id);
+  if (!moving || !source) return blocks;
+  const target = (function find(list: PageBlock[]): { id: string; blocks: PageBlock[] } | null {
+    for (const b of list) {
+      for (const c of b.columns ?? []) {
+        if (c.id === targetColumnId) return c;
+        const deeper = find(c.blocks);
+        if (deeper) return deeper;
+      }
+    }
+    return null;
+  })(blocks);
+  if (!target) return blocks;
+  const sameColumn = source.columnId === targetColumnId;
+  if (!sameColumn && target.blocks.length >= maxPerColumn) return blocks;
+  if (moving.columns) return blocks; // columns can't be nested
+  const without = removeBlockById(blocks, id);
+  const place = (list: PageBlock[]): PageBlock[] =>
+    list.map((b) => {
+      if (!b.columns) return b;
+      return {
+        ...b,
+        columns: b.columns.map((c) => {
+          if (c.id === targetColumnId) {
+            const at = Math.max(0, Math.min(index, c.blocks.length));
+            return { ...c, blocks: [...c.blocks.slice(0, at), moving, ...c.blocks.slice(at)] };
+          }
+          return { ...c, blocks: place(c.blocks) };
+        }),
+      };
+    });
+  return place(without);
+}

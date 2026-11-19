@@ -21,10 +21,24 @@ function clean(url: string | undefined): string | null {
 }
 
 /**
- * The link people share. SHORT_LINK_BASE_URL can be a shorter domain pointed at this app, for example https://w.ta,
- * and falls back to the app's own address.
+ * The link people share. SHORT_LINK_BASE_URL can be a shorter domain pointed at this app, for example
+ * https://w.techraacademy.com (links look like https://w.techraacademy.com/ab3k9xz), and falls back to the app's own
+ * address (https://app.example.com/s/ab3k9xz).
  */
 export function shortUrl(code: string, env: Record<string, string | undefined> = process.env): string {
-  const base = clean(env.SHORT_LINK_BASE_URL) ?? clean(env.NEXT_PUBLIC_APP_URL) ?? "http://localhost:3000";
-  return `${base}/s/${code}`;
+  const shortBase = clean(env.SHORT_LINK_BASE_URL);
+  // On its own short domain the link is just /{code}. Otherwise it lives under /s/ on the app's address.
+  if (shortBase) return `${shortBase}/${code}`;
+  return `${clean(env.NEXT_PUBLIC_APP_URL) ?? "http://localhost:3000"}/s/${code}`;
+}
+
+/** The short domain's host (for example "w.techraacademy.com"), or null when no separate short domain is set. */
+export function shortHost(env: Record<string, string | undefined> = process.env): string | null {
+  const base = clean(env.SHORT_LINK_BASE_URL);
+  if (!base) return null;
+  try {
+    return new URL(base).host.toLowerCase();
+  } catch {
+    return null;
+  }
 }

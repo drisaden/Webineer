@@ -248,6 +248,16 @@ export interface ReplaySettings {
   expiration: "never" | "date" | "days_after";
   expiresOn: string;
   expiresAfterDays: number;
+  /** Optional: sell the replay. Live-ticket holders can watch free. */
+  sales?: ReplaySales;
+}
+
+export interface ReplaySales {
+  enabled: boolean;
+  /** Major units. */
+  price: number;
+  currency: "NGN" | "USD" | "EUR" | "GBP";
+  freeForTicketHolders: boolean;
 }
 
 export interface WebinarWorkflowConfig {

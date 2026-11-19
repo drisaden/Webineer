@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { ReplayPurchase } from "@/components/room/replay-purchase";
 import { AccessGate } from "@/components/room/access-gate";
 import { canManageWebinar, getCurrentUser } from "@/lib/auth/demo-session";
 import { buildPlayerUrl } from "@/lib/webinar-workflow/video";
@@ -15,7 +16,7 @@ export default async function ReplayPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ r?: string; k?: string; preview?: string }>;
+  searchParams: Promise<{ r?: string; k?: string; preview?: string; payment?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -28,6 +29,10 @@ export default async function ReplayPage({
 
   const config = webinar.workflow;
   const decision = await decideReplayAccess(webinar, { r: query.r, k: query.k, host });
+  if (!decision.allowed && decision.kind === "purchase") {
+    const note = query.payment === "pending" ? "Your payment is still being confirmed. Refresh in a minute; if you were charged you will get access automatically." : query.payment === "failed" ? "The payment didn't go through. You haven't been charged. Please try again." : undefined;
+    return <ReplayPurchase slug={slug} title={config.replay.title || `${webinar.title} — replay`} price={decision.price} currency={decision.currency} r={query.r} k={query.k} note={note} />;
+  }
   if (!decision.allowed) {
     return (
       <AccessGate

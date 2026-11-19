@@ -253,6 +253,11 @@ const checks: Record<WorkflowDataSectionKey, Check> = {
     } else {
       videoIssues("replay", "Replay video", r.video.provider, r.video.url, issues, "video.url", true);
     }
+    if (r.sales?.enabled) {
+      if (!(r.sales.price > 0)) issues.push(err("replay", "Set a replay price above zero, or turn off replay sales.", "sales.price"));
+      if (r.access === "anyone_with_link") issues.push(err("replay", "A replay that is for sale can't also be open to anyone with the link. Choose another access rule.", "access"));
+      if (r.access === "paid_only") issues.push(err("replay", "Replay sales and \"paid registrants only\" conflict. Choose \"All registrants\" or \"Attended only\" and let the sale decide who pays.", "access"));
+    }
     if (r.access === "paid_only" && !config.integrations.payment.enabled) {
       issues.push(err("replay", "Replay is limited to paid registrants, but paid registration is off.", "access"));
     }

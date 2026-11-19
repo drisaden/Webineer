@@ -426,20 +426,37 @@ function BlockBody({ block, ctx }: { block: PageBlock; ctx: BlockContext }) {
     }
     case "map":
       if (!block.text.trim() && !isHttps(block.link)) return builder ? <Placeholder icon={<MapPin className="h-5 w-5" />}>Add an address.</Placeholder> : null;
-      return (
-        <div className="flex items-start gap-4 text-left">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: `${theme.accent}33`, color: theme.accent }}>
-            <MapPin className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            {block.heading.trim() && <h2 className="text-xl">{block.heading}</h2>}
-            {block.text.trim() && <p className="mt-1 whitespace-pre-line opacity-80">{block.text}</p>}
-            {isHttps(block.link) && (
-              <a href={block.link} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-flex min-h-[44px] items-center text-sm font-semibold underline">Open in maps</a>
+      {
+        const address = block.text.trim().slice(0, 300);
+        const mapsLink = isHttps(block.link) ? block.link : address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "";
+        return (
+          <div className="space-y-4 text-left">
+            <div className="flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: `${theme.accent}33`, color: theme.accent }}>
+                <MapPin className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                {block.heading.trim() && <h2 className="text-xl">{block.heading}</h2>}
+                {block.text.trim() && <p className="mt-1 whitespace-pre-line opacity-80">{block.text}</p>}
+                {mapsLink && (
+                  <a href={mapsLink} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-flex min-h-[44px] items-center text-sm font-semibold underline">Open in maps</a>
+                )}
+              </div>
+            </div>
+            {block.embed && address && (
+              <iframe
+                title={`Map: ${address}`}
+                data-map-embed
+                src={`https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`}
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="h-64 w-full rounded-2xl border-0"
+                allowFullScreen
+              />
             )}
           </div>
-        </div>
-      );
+        );
+      }
     case "columns": {
       const cols = block.columns ?? [];
       const n = cols.length;

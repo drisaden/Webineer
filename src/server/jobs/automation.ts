@@ -104,7 +104,8 @@ export async function planNotifications(now = new Date()): Promise<{ planned: nu
     if (!webinar.workflow || webinar.status === "paused") continue;
     // Long-finished webinars have nothing left to send (follow-ups are capped at 24h late).
     if (webinar.status === "completed" && primarySessionWindow(webinar, now).endsAt.getTime() < now.getTime() - 30 * 86400e3) continue;
-    const registrations = await store.listRegistrations(webinar.id);
+    // Replay-only buyers never joined the live session, so they get no live reminders.
+    const registrations = (await store.listRegistrations(webinar.id)).filter((r) => r.metadata?.replayOnly !== true);
     for (const registration of registrations) {
       for (const item of planForRegistration(webinar, registration)) {
         if (item.dueAt.getTime() > now.getTime() + TICK_LOOKAHEAD_MS) continue;

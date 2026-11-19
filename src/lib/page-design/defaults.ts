@@ -34,7 +34,7 @@ export interface BlockDefinition {
   /** Only one of these may exist on a page. */
   single?: boolean;
   /** Which content fields the editor shows for this block. */
-  fields: ("heading" | "text" | "image" | "imageSide" | "button" | "link" | "items" | "showDate" | "height" | "columns")[];
+  fields: ("heading" | "text" | "image" | "imageSide" | "button" | "link" | "items" | "showDate" | "embed" | "height" | "columns")[];
   itemLabels?: { title: string; text: string; noun: string };
   /** Extra fields each item has, beyond its title and text. */
   itemFields?: ("image" | "link" | "icon")[];
@@ -288,8 +288,8 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     label: "Location",
     description: "An address with a link to the map",
     advanced: true,
-    fields: ["heading", "text", "link"],
-    create: () => base(CARD, { heading: "Where to find us", text: "Street address, city" }),
+    fields: ["heading", "text", "link", "embed"],
+    create: () => base(CARD, { heading: "Where to find us", text: "Street address, city", embed: true }),
   },
   {
     type: "columns",

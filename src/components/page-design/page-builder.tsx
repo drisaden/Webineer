@@ -68,7 +68,7 @@ import { BLOCK_BY_TYPE, BLOCK_DEFINITIONS, MAX_BLOCK_ITEMS, MAX_NESTED_BLOCKS, M
 import { ICON_LABEL, PAGE_ICONS } from "@/lib/page-design/icons";
 import { pageDesignPlanIssue, type PageBuilderLimits } from "@/lib/page-design/plan";
 import { ALL_TEMPLATES, templateNeedsPaidPlan } from "@/lib/page-design/templates";
-import { cloneWithNewIds, countBlocks, findBlock, findParent, insertIntoColumn, mapBlock, moveInColumn, removeBlockById, resizeColumns, treeHasType, containsType } from "@/lib/page-design/tree";
+import { cloneWithNewIds, countBlocks, findBlock, findParent, insertIntoColumn, mapBlock, moveInColumn, moveToColumn, removeBlockById, resizeColumns, treeHasType, containsType } from "@/lib/page-design/tree";
 import { isSingleBlock, pageDesignSchema } from "@/lib/page-design/schema";
 import type { PublicRegistrationView } from "@/lib/webinar-workflow/public-view";
 import { cn } from "@/lib/utils";
@@ -317,6 +317,7 @@ interface ColumnTools {
   select: (id: string) => void;
   add: (columnId: string, type: PageBlockType) => void;
   move: (id: string, direction: -1 | 1) => void;
+  moveTo: (id: string, columnId: string, index: number) => void;
   remove: (id: string) => void;
   resize: (count: number) => void;
 }
@@ -343,16 +344,40 @@ function VisibilityControls({ block, onChange }: { block: PageBlock; onChange: (
 
 function ColumnsEditor({ block, tools }: { block: PageBlock; tools: ColumnTools }) {
   const columns = block.columns ?? [];
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overKey, setOverKey] = useState<string | null>(null);
+  const endDrag = () => (setDragId(null), setOverKey(null));
+  const dropAt = (columnId: string, index: number) => {
+    if (dragId) tools.moveTo(dragId, columnId, index);
+    endDrag();
+  };
   const addable = BLOCK_DEFINITIONS.filter((d) => d.type !== "columns" && (!d.advanced || tools.limits.advancedElements));
   return (
     <div className="space-y-3" data-testid="columns-editor">
       <Segmented label="Columns" value={String(columns.length) as "1" | "2" | "3" | "4"} onChange={(v) => tools.resize(Number(v))} options={[{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }]} />
       {columns.map((column, ci) => (
-        <div key={column.id} className="space-y-2 rounded-xl border border-border bg-[#F7F9FC] p-3" data-column={ci + 1}>
+        <div
+          key={column.id}
+          className={cn("space-y-2 rounded-xl border bg-[#F7F9FC] p-3", overKey === `${column.id}:end` ? "border-[#0AEBCB]" : "border-border")}
+          data-column={ci + 1}
+          data-column-drop={ci + 1}
+          onDragOver={(e) => { if (dragId) { e.preventDefault(); setOverKey(`${column.id}:end`); } }}
+          onDrop={(e) => { e.preventDefault(); dropAt(column.id, column.blocks.length); }}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-secondaryText">Column {ci + 1}</p>
           {column.blocks.length === 0 && <p className="text-xs text-secondaryText">Empty. Add an element below.</p>}
           {column.blocks.map((child, i) => (
-            <div key={child.id} className="flex items-center gap-1 rounded-lg bg-white px-2 py-1">
+            <div
+              key={child.id}
+              draggable
+              data-child-row={child.type}
+              onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", child.id); setDragId(child.id); }}
+              onDragEnd={endDrag}
+              onDragOver={(e) => { if (dragId && dragId !== child.id) { e.preventDefault(); e.stopPropagation(); setOverKey(child.id); } }}
+              onDrop={(e) => { e.preventDefault(); e.stopPropagation(); dropAt(column.id, i); }}
+              className={cn("flex cursor-grab items-center gap-1 rounded-lg bg-white px-2 py-1", dragId === child.id && "opacity-40", overKey === child.id && "ring-2 ring-[#0AEBCB]")}
+            >
+              <GripVertical className="h-4 w-4 shrink-0 text-secondaryText" aria-hidden />
               <button type="button" onClick={() => tools.select(child.id)} data-child-edit={child.type} className="min-h-[44px] flex-1 truncate text-left text-sm font-medium text-[#17294B]">
                 {BLOCK_BY_TYPE[child.type].label}
               </button>
@@ -383,6 +408,7 @@ function ColumnsEditor({ block, tools }: { block: PageBlock; tools: ColumnTools 
         </div>
       ))}
       {tools.full && <Notice tone="warning">The page has reached its element limit.</Notice>}
+      <p className="text-xs text-secondaryText">Drag an element by its row to reorder it or move it to another column. On touch screens use the arrows.</p>
     </div>
   );
 }
@@ -442,6 +468,12 @@ function BlockSettings({ block, view, onChange, tools }: { block: PageBlock; vie
           />
         )}
         {has("columns") && <ColumnsEditor block={block} tools={tools} />}
+        {has("embed") && (
+          <>
+            <Toggle label="Show an embedded map" checked={block.embed ?? false} onChange={(v) => set("embed", v, false)} />
+            {block.embed && <p className="text-xs text-secondaryText">The map is loaded from Google Maps, so the browser of anyone viewing the page connects to Google. Use the address above, or turn this off to show a plain link.</p>}
+          </>
+        )}
         {has("showDate") && <Toggle label="Show the session date" checked={block.showDate} onChange={(v) => set("showDate", v, false)} />}
         {has("height") && (
           <div>
@@ -891,6 +923,7 @@ export function PageBuilder({ webinarId, slug, title, isDraft, registration: ini
     select: (id) => setSelectedId(id),
     add: insertChild,
     move: moveChild,
+    moveTo: (id, columnId, index) => commit({ ...designRef.current, blocks: moveToColumn(designRef.current.blocks, id, columnId, index, MAX_NESTED_BLOCKS) }),
     remove: removeBlock,
     resize: (count) => selected && commit({ ...designRef.current, blocks: mapBlock(designRef.current.blocks, selected.id, (b) => resizeColumns(b, count, blockId)) }),
   };

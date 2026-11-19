@@ -7,7 +7,16 @@ import type { Registration, Webinar } from "@/types";
 
 export type AccessDecision =
   | { allowed: true; registration: Registration | null; host: boolean; sessionStart: Date; sessionEnd: Date }
-  | { allowed: false; reason: string; kind: "register" | "payment" | "not_open" | "ended" | "unavailable" | "not_eligible" | "expired"; at?: Date };
+  | { allowed: false; reason: string; kind: "register" | "payment" | "not_open" | "ended" | "unavailable" | "not_eligible" | "expired"; at?: Date }
+  | { allowed: false; kind: "purchase"; reason: string; price: number; currency: string; registrationId?: string; at?: undefined };
+
+/** Whether this registration may watch a replay that is for sale: it bought it, or holds a paid live ticket (when that is free). */
+export function replayEntitled(config: Webinar["workflow"] & object, registration: Registration | null): boolean {
+  const sales = config.replay.sales;
+  if (!sales?.enabled || !registration) return false;
+  if (registration.metadata?.replayPaid === true) return true;
+  return sales.freeForTicketHolders && config.integrations.payment.enabled && registration.paymentStatus === "paid";
+}
 
 function registrantWindow(webinar: Webinar, registration: Registration | null, now: Date) {
   const config = webinar.workflow!;
@@ -34,7 +43,9 @@ export async function decideRoomAccess(webinar: Webinar, input: { r?: string; k?
     return { allowed: true, registration: null, host: true, sessionStart: w.start, sessionEnd: w.end };
   }
 
-  const registration = await verifyAccess(webinar, input.r, input.k);
+  const verified = await verifyAccess(webinar, input.r, input.k);
+  // A replay-only buyer never registered for the live session, so their link doesn't open the room.
+  const registration = verified?.metadata?.replayOnly === true ? null : verified;
   if (config.live.access === "registered" || paid) {
     if (!registration) return { allowed: false, kind: "register", reason: "This room is for registered attendees. Use the personal link from your confirmation email, or register first." };
     if (paid && registration.paymentStatus !== "paid") return { allowed: false, kind: "payment", reason: "Your payment hasn't been verified yet, so the room isn't available." };
@@ -76,7 +87,11 @@ export async function decideReplayAccess(webinar: Webinar, input: { r?: string; 
   }
 
   const registration = await verifyAccess(webinar, input.r, input.k);
-  if (replay.access !== "anyone_with_link") {
+  if (replay.sales?.enabled) {
+    if (!replayEntitled(config, registration)) {
+      return { allowed: false, kind: "purchase", reason: "Buy the replay to watch it.", price: replay.sales.price, currency: replay.sales.currency, registrationId: registration?.id };
+    }
+  } else if (replay.access !== "anyone_with_link") {
     if (!registration) return { allowed: false, kind: "register", reason: "The replay is available to registered attendees. Use the personal link from your email." };
     if (registration.paymentStatus === "pending") return { allowed: false, kind: "payment", reason: "Your payment hasn't been verified yet." };
     if (replay.access === "attended_only" && !["attended", "converted"].includes(registration.status)) {

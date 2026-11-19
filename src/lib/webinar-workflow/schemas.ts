@@ -217,6 +217,14 @@ export const sectionSchemas = {
     expiration: z.enum(["never", "date", "days_after"]),
     expiresOn: localDate,
     expiresAfterDays: z.number().int().min(1).max(365),
+    sales: z
+      .object({
+        enabled: z.boolean(),
+        price: z.number().min(0).max(100_000_000),
+        currency: z.enum(["NGN", "USD", "EUR", "GBP"]),
+        freeForTicketHolders: z.boolean(),
+      })
+      .optional(),
   }),
 } satisfies Record<WorkflowDataSectionKey, z.ZodTypeAny>;
 

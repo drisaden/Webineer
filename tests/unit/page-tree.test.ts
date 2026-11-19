@@ -135,3 +135,34 @@ test("empty new elements are hidden from visitors but not from the builder", () 
   assert.equal(isBlockEmpty(createBlock("stats"), view), false);
   assert.equal(isBlockEmpty(createBlock("columns"), view), true, "empty columns render nothing");
 });
+
+import { moveToColumn } from "../../src/lib/page-design/tree";
+{
+  const build = () => {
+    const cols = createBlock("columns");
+    const a = createBlock("text"), b = createBlock("heading"), c = createBlock("button");
+    cols.columns = [{ id: "c1", blocks: [a, b] }, { id: "c2", blocks: [c] }];
+    return { cols, a, b, c };
+  };
+  test("reorders inside a column", () => {
+    const { cols, a, b } = build();
+    const out = moveToColumn([cols], b.id, "c1", 0, 6)[0].columns!;
+    assert.deepEqual(out[0].blocks.map((x) => x.id), [b.id, a.id]);
+  });
+  test("moves to another column at an index", () => {
+    const { cols, a, b, c } = build();
+    const out = moveToColumn([cols], a.id, "c2", 0, 6)[0].columns!;
+    assert.deepEqual(out[0].blocks.map((x) => x.id), [b.id]);
+    assert.deepEqual(out[1].blocks.map((x) => x.id), [a.id, c.id]);
+  });
+  test("a full column refuses blocks from elsewhere but allows reordering", () => {
+    const { cols, a, c } = build();
+    assert.equal(moveToColumn([cols], c.id, "c1", 0, 2)[0].columns![0].blocks.length, 2);
+    assert.deepEqual(moveToColumn([cols], a.id, "c1", 2, 2)[0].columns![0].blocks.length, 2);
+  });
+  test("unknown ids change nothing", () => {
+    const { cols } = build();
+    assert.deepEqual(moveToColumn([cols], "nope", "c1", 0, 6), [cols]);
+    assert.deepEqual(moveToColumn([cols], cols.columns![0].blocks[0].id, "nope", 0, 6), [cols]);
+  });
+}

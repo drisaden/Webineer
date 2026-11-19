@@ -145,7 +145,7 @@ export async function computeDueNotifications(webinar: Webinar, now = new Date()
   if (!config || webinar.status === "draft") return [];
   const sent = new Set(config.sentNotificationKeys ?? []);
   const registrations = (await getStore().listRegistrations(webinar.id))
-    .filter((r) => r.status !== "cancelled" && r.paymentStatus !== "pending");
+    .filter((r) => r.status !== "cancelled" && r.paymentStatus !== "pending" && r.metadata?.replayOnly !== true);
   const durationMs = config.schedules.durationMinutes * 60_000;
   const due: DueNotification[] = [];
 

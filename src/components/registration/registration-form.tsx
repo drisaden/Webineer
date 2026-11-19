@@ -47,6 +47,20 @@ export function RegistrationForm({
   const [values, setValues] = useState({ name: "", email: "", phone: "", sessionId: view.sessions[0]?.id ?? "", website: "" });
   const [tierId, setTierId] = useState(view.tickets.length === 1 ? view.tickets[0].id : "");
   const [discountCode, setDiscountCode] = useState("");
+  const [quote, setQuote] = useState<{ code: string; tierId: string; amount: number; discount: number; currency: string } | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const applyCode = async () => {
+    setQuoting(true);
+    setFieldErrors((e) => ({ ...e, discountCode: "" }));
+    try {
+      const res = await fetch("/api/public/price-quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId: view.publicId, tierId, discountCode: discountCode.trim() }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setQuote(null); setFieldErrors((e) => ({ ...e, ...(data.fieldErrors ?? { discountCode: data.error ?? "Could not check the code." }) })); return; }
+      setQuote({ code: data.code ?? "", tierId, amount: data.amount, discount: data.discount, currency: data.currency });
+    } catch { setFieldErrors((e) => ({ ...e, discountCode: "Could not check the code. Try again." })); }
+    finally { setQuoting(false); }
+  };
+  const quoteValid = quote && quote.code && quote.code === discountCode.trim().toUpperCase() && quote.tierId === tierId ? quote : null;
   const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
   const renderedAt = useRef<number>(0);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -252,7 +266,11 @@ export function RegistrationForm({
           {view.hasDiscountCodes && (
             <div>
               <label htmlFor="reg-code" className="mb-1 block text-sm font-medium text-primaryText">Discount code <span className="font-normal text-secondaryText">(optional)</span></label>
-              <input id="reg-code" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} maxLength={40} autoComplete="off" className="h-11 w-full rounded-xl border border-[#E3E8F2] px-3 text-sm uppercase" />
+              <div className="flex gap-2">
+                <input id="reg-code" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} maxLength={40} autoComplete="off" className="h-11 w-full rounded-xl border border-[#E3E8F2] px-3 text-sm uppercase" />
+                <button type="button" data-apply-code onClick={applyCode} disabled={quoting || !discountCode.trim() || (view.tickets.length > 0 && !tierId)} className="h-11 shrink-0 rounded-xl border border-[#C9D3E6] px-4 text-sm font-medium text-primaryText disabled:opacity-50">{quoting ? "Checking…" : "Apply"}</button>
+              </div>
+              {quoteValid && <p data-testid="quote-total" className="mt-1 text-xs text-[#1D7A4B]">Code applied. You pay <strong>{quoteValid.amount > 0 ? new Intl.NumberFormat("en", { style: "currency", currency: quoteValid.currency }).format(quoteValid.amount) : "nothing"}</strong>{quoteValid.discount > 0 ? ` (saves ${new Intl.NumberFormat("en", { style: "currency", currency: quoteValid.currency }).format(quoteValid.discount)})` : ""}.</p>}
               {fieldErrorEl("discountCode")}
             </div>
           )}
