@@ -7,12 +7,26 @@ function logoUrl(): string {
 }
 
 /** Branded, table-based wrapper that renders consistently in common email clients. */
+const plain = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/&(?:amp|lt|gt|quot|#39|#x27);/g, " ").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+
+/**
+ * The hidden preheader is read by mail apps as the inbox/notification preview, and the visible body follows it.
+ * When the preheader just repeats the opening of the body, the preview reads the same line twice, so it is dropped.
+ */
+export function usefulPreheader(preheader: string | undefined, contentHtml: string): string | undefined {
+  const text = preheader?.trim();
+  if (!text) return undefined;
+  const wanted = plain(text);
+  return wanted && plain(contentHtml).slice(0, 600).includes(wanted) ? undefined : text;
+}
+
 export function renderLayout(opts: { contentHtml: string; preheader?: string; footer?: string; footerHtml?: string }): string {
+  const preheader = usefulPreheader(opts.preheader, opts.contentHtml);
   const footer = opts.footer ?? "You’re receiving this email because of activity on Webineer.";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Webineer</title></head>
 <body style="margin:0;padding:0;background:#F4F6FA;font-family:Arial,Helvetica,sans-serif;color:#17294B;">
-${opts.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.preheader)}</div>` : ""}
+${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>` : ""}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6FA;padding:24px 12px;">
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border:1px solid #E4E9F1;border-radius:14px;">

@@ -34,15 +34,15 @@ export default async function WebinarDetailPage({
 
   return (
     <DashboardShell title={webinar.title}>
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div className="flex flex-col gap-4 rounded-[2rem] border border-border bg-[#101B35] p-6 text-white md:flex-row md:items-center md:justify-between shadow-soft">
-          <div>
-            <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-wider text-[#16D6B2]">{webinar.type}</span>
               <Badge label={webinar.status} tone={webinar.status === "scheduled" ? "info" : "success"} className="bg-white/10 text-white" />
             </div>
-            <h2 className="mt-3 text-2xl font-semibold">{webinar.title}</h2>
-            <p className="mt-1 text-sm text-white/70">{webinar.description}</p>
+            <h2 className="mt-3 break-words text-2xl font-semibold">{webinar.title}</h2>
+            <p className="mt-1 break-words text-sm text-white/70">{webinar.description}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {userCan(user, "webinar.delete") && <DeleteWebinarButton webinarId={webinar.id} title={webinar.title} />}
@@ -66,8 +66,8 @@ export default async function WebinarDetailPage({
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-          <div className="space-y-6">
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+          <div className="min-w-0 space-y-6">
             <div className="overflow-hidden rounded-[2rem] border border-border bg-white p-4 shadow-soft">
               <div className="mb-4 flex items-center justify-between px-2">
                 <div className="flex items-center gap-2">
@@ -88,25 +88,25 @@ export default async function WebinarDetailPage({
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-[2rem] border border-border bg-white p-6 shadow-soft">
+          <div className="min-w-0 space-y-6">
+            <div className="rounded-[2rem] border border-border bg-white p-4 shadow-soft sm:p-6">
               <h3 className="text-lg font-semibold text-primaryText">Webinar Details</h3>
               <div className="mt-4 space-y-4 text-sm text-secondaryText">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="flex items-center gap-2"><CalendarClock className="h-4 w-4 text-[#16D6B2]" /> Starts at</span>
-                  <span className="font-medium text-primaryText">{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                  <span className="flex shrink-0 items-center gap-2"><CalendarClock className="h-4 w-4 text-[#16D6B2]" /> Starts at</span>
+                  <span className="min-w-0 break-words text-right font-medium text-primaryText">{formatDateTime(webinar.schedule.startsAt, webinar.schedule.timezone)}</span>
                 </div>
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="flex items-center gap-2"><Users className="h-4 w-4 text-[#16D6B2]" /> Registrations</span>
-                  <span className="font-medium text-primaryText">{webinar.registrationCount}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                  <span className="flex shrink-0 items-center gap-2"><Users className="h-4 w-4 text-[#16D6B2]" /> Registrations</span>
+                  <span className="min-w-0 break-words text-right font-medium text-primaryText">{webinar.registrationCount}</span>
                 </div>
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="flex items-center gap-2"><Eye className="h-4 w-4 text-[#16D6B2]" /> Attendees</span>
-                  <span className="font-medium text-primaryText">{webinar.attendeeCount}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                  <span className="flex shrink-0 items-center gap-2"><Eye className="h-4 w-4 text-[#16D6B2]" /> Attendees</span>
+                  <span className="min-w-0 break-words text-right font-medium text-primaryText">{webinar.attendeeCount}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16D6B2]" /> Timezone</span>
-                  <span className="font-medium text-primaryText">{webinar.schedule.timezone}</span>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex shrink-0 items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#16D6B2]" /> Timezone</span>
+                  <span className="min-w-0 break-words text-right font-medium text-primaryText">{webinar.schedule.timezone}</span>
                 </div>
               </div>
 

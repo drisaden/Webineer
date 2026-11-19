@@ -57,7 +57,7 @@ export function ShareLinks({ webinarId, pageUrl, initialShort }: { webinarId: st
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-secondaryText">Public registration link</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <a href={pageUrl} target="_blank" rel="noreferrer" className="flex min-h-[44px] min-w-0 flex-1 items-center truncate text-sm font-medium text-[#0A7F6B] hover:underline" data-testid="page-url">{pageUrl}</a>
+          <a href={pageUrl} target="_blank" rel="noreferrer" className="block min-w-0 flex-1 break-all py-2.5 text-sm font-medium text-[#0A7F6B] hover:underline" data-testid="page-url">{pageUrl}</a>
           <CopyButton text={pageUrl} label="Copy link" testid="copy-page-url" />
         </div>
       </div>
@@ -65,7 +65,7 @@ export function ShareLinks({ webinarId, pageUrl, initialShort }: { webinarId: st
         <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-secondaryText"><Link2 className="h-3.5 w-3.5" aria-hidden /> Short link</p>
         {short ? (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-primaryText" data-testid="short-url">{short}</span>
+            <span className="min-w-0 flex-1 break-all text-sm font-medium text-primaryText" data-testid="short-url">{short}</span>
             <CopyButton text={short} label="Copy short link" testid="copy-short-url" />
           </div>
         ) : (
